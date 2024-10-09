@@ -1,0 +1,10 @@
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.centeredDiv {
+  width: 50%; /* Set any width you prefer */
+  height: 50%; /* And any height */
+}
