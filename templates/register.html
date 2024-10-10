@@ -12,25 +12,27 @@
 <body>
     <script>0</script> <!--workaround for unstyled flash in firefox https://stackoverflow.com/a/57888310-->
     <div class="container">
-        <form class="centeredDiv" action="/login" method="POST">
-            <h class="headertext">Login</h>
+        <form class="centeredDiv" action="/register" method="POST">
+            <h class="headertext">Register</h>
             <div class="form-group">
               <label for="username">Username</label>
               <input type="username" class="form-control" id="username" name="username" placeholder="Username">
             </div>
+            <text style="font-weight: bold; color: crimson; display: none;" id="usernameTakenError">Username already in use!</text>
             <div class="form-group">
               <label for="password">Password</label>
               <input type="password" class="form-control" id="password" name="password" placeholder="Password">
             </div>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="rememberme" name="rememberme">
-              <label class="form-check-label" for="rememberme">Remember me</label>
+            <div class="form-group">
+                <label for="repassword">Re-enter password</label>
+                <input type="password" class="form-control" id="repassword" name="repassword" placeholder="Re-enter password">
             </div>
+            <text style="font-weight: bold; color: crimson; display: none;" id="passwordsDontMatchError">Passwords don't match!</text>
             {% if show_error_msg %}
             <text style="font-weight: bold; color: crimson;">Login failed. Account doesn't exist or username/password is incorrect :C</text>
             {% endif %}
-            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Login</button><br>
-            <button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="location.href='/register'" type="button">No account? Register now!</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 30px;" id="registerButt">Register</button><br>
+            <button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="location.href='/login'" type="button">Already have account? Log in!</button>
         </form>
     </div>
 </body>

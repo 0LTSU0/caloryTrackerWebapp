@@ -4,7 +4,18 @@
     align-items: center;
     height: 100vh;
 }
+
 .centeredDiv {
   width: 50%; /* Set any width you prefer */
   height: 50%; /* And any height */
+}
+
+.headertext {
+  width: 100%;
+  display: block;
+  text-align: center;
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 2px #aaaaaa;
 }
