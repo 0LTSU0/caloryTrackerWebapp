@@ -28,7 +28,14 @@ $( document ).ready(function() {
                 }
             })
         });
+        $("#username").on('input', function(){
+            $("#error_msg_from_flask").hide() 
+        });
+        $("#password").on('input', function(){
+            $("#error_msg_from_flask").hide() 
+        });
         $("#repassword").on('input', function(){
+            $("#error_msg_from_flask").hide() 
             if ($("#repassword").val() != $("#password").val())
             {
                 $("#repassword").css("color", "crimson");

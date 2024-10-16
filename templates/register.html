@@ -29,7 +29,7 @@
             </div>
             <text style="font-weight: bold; color: crimson; display: none;" id="passwordsDontMatchError">Passwords don't match!</text>
             {% if show_error_msg %}
-            <text style="font-weight: bold; color: crimson;">Login failed. Account doesn't exist or username/password is incorrect :C</text>
+            <text style="font-weight: bold; color: crimson;" id="error_msg_from_flask">Account creation failed! Username is already taken or passwords didn't match</text>
             {% endif %}
             <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 30px;" id="registerButt">Register</button><br>
             <button class="btn btn-secondary" style="width: 100%; margin-top: 10px;" onclick="location.href='/login'" type="button">Already have account? Log in!</button>
