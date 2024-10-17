@@ -7,6 +7,8 @@ PWD_SALT = "thisissomestringtobeusedasasaltforpwdhashing"
 TOKEN_SALT = "thisissomestringtobeusedassaltfortokens"
 LOGIN_VALIDITY_TIME = 60 * 60 * 24 * 7 #token expires one week from now
 UNKNOWN_USER_ID = -1
+DEFAULT_CALORY_TARGET = 2000
+DEFAULT_WEIGHT_GOAL = 0
 
 def hash_password(pwd):
     hash = pwd + PWD_SALT 
@@ -34,14 +36,47 @@ class dbAccess():
         print("init_database(), loading users to memory")
         user_rows = self.cur.execute('SELECT * FROM users').fetchall()
         for row in user_rows:
-            #row is: id, username, pwdhash, sessiontoken, sessiontokenexp
-            self.registered_users[row[1]] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0]}
+            #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal
+            username = row[1]
+            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "food_records": [], "weight_records": []}
+            for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
+                #row is: id, datetime, food, calories, note
+                entry = {"datetime": row[1], "food": row[2], "note": row[3]}
+                self.registered_users[username]["food_records"].append(entry)
+                print("Loaded entry", entry, "for user", username)
+            for w_row in self.cur.execute(f'SELECT * FROM userdata_weights_{username} ORDER BY datetime ASC').fetchall():
+                #row is: id, datetime, weight
+                entry = {"datetime": row[1], "weight": row[2]}
+                self.registered_users[username]["weight_records"].append(entry)
+                print("Loaded entry", entry, "for user", username)
 
+
+    #init general tables like users and in case someone is missing user data, create those tables also
     def init_tables(self):
         res = self.cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
         if not ("users",) in res:
             print("Users table does not exist in db, creating now")
-            self.cur.execute("CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, pwdhash TEXT, sessiontoken TEXT, sessiontokenexp INTEGER)")
+            self.cur.execute("CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, pwdhash TEXT, sessiontoken TEXT, sessiontokenexp INTEGER, dailycalories INTEGER, weightgoal REAL)")
+        else:
+            print("users table already in db, creating userdata tables for anyone missing one")
+            for row in self.cur.execute('SELECT * FROM users').fetchall():
+                user_table_name = f"userdata_foods_{row[1]}"
+                if not (user_table_name,) in res:
+                    self.init_user_data_table(user_table_name)
+                user_table_name = f"userdata_weights_{row[1]}"
+                if not (user_table_name,) in res:
+                    self.init_user_data_table(user_table_name)
+                    
+    #NOTE: only call this inside with thlock or in init steps
+    def init_user_data_table(self, table_name):
+        if "foods" in table_name:
+            print("Creating table:", table_name)
+            self.cur.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY AUTOINCREMENT, datetime INTEGER, food TEXT, calories REAL, note TEXT)")
+        elif "weights" in table_name:
+            print("Creating table:", table_name)
+            self.cur.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY AUTOINCREMENT, datetime INTEGER, weight REAL)")
+        else:
+            print("Attempted to create unknown type of userdata table", table_name)
 
     def check_login(self, username, pwd):
         #with self.thlock:
@@ -64,12 +99,13 @@ class dbAccess():
         pwd_hash = hash_password(password)
         token, expiry = generate_login_token(username)
         sql = f"INSERT INTO users (username, pwdhash, sessiontoken, sessiontokenexp) VALUES ('{username}', '{pwd_hash}', '{token}', {expiry})"
-        
         try:
             with self.thlock:
                 self.cur.execute(sql)
                 self.db.commit()
-            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID} #TODO: if user id is used for something it needs to be set to correct value
+                self.init_user_data_table(f"userdata_foods_{username}")
+                self.init_user_data_table(f"userdata_weights_{username}")
+            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID, "dailycalorylimit": DEFAULT_CALORY_TARGET, "weightgoal": DEFAULT_WEIGHT_GOAL, "food_records": {}, "weight_records": {}} #TODO: if user id is used for something it needs to be set to correct value
             return True, token
         except Exception as e:
             print("Exception in create_new_account()", e)
