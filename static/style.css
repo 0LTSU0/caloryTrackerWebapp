@@ -1,12 +1,26 @@
-.container {
+.logincontainer {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    width: 100vw;
 }
 
+.page_container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100%;
+  max-width: 1300px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+
 .centeredDiv {
-  width: 50%; /* Set any width you prefer */
+  max-width: 650px;
+  width: 100%; /* Set any width you prefer */
   height: 50%; /* And any height */
 }
 

@@ -8,7 +8,7 @@ TOKEN_SALT = "thisissomestringtobeusedassaltfortokens"
 LOGIN_VALIDITY_TIME = 60 * 60 * 24 * 7 #token expires one week from now
 UNKNOWN_USER_ID = -1
 DEFAULT_CALORY_TARGET = 2000
-DEFAULT_WEIGHT_GOAL = 0
+DEFAULT_WEIGHT_GOAL = 80
 
 def hash_password(pwd):
     hash = pwd + PWD_SALT 
@@ -109,7 +109,7 @@ class dbAccess():
             return False
         pwd_hash = hash_password(password)
         token, expiry = generate_login_token(username)
-        sql = f"INSERT INTO users (username, pwdhash, sessiontoken, sessiontokenexp) VALUES ('{username}', '{pwd_hash}', '{token}', {expiry})"
+        sql = f"INSERT INTO users (username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal, normaldailyburn) VALUES ('{username}', '{pwd_hash}', '{token}', {expiry}, {DEFAULT_CALORY_TARGET}, {DEFAULT_WEIGHT_GOAL}, {DEFAULT_CALORY_TARGET})"
         try:
             with self.thlock:
                 self.cur.execute(sql)
@@ -145,3 +145,9 @@ class dbAccess():
         if not username in self.registered_users.keys() or token != self.registered_users[username].get("sessiontoken") or time.time() > self.registered_users[username].get("sessiontokenexp"):
             return False
         return True
+    
+    def fill_settings_form(self, user):
+        userdata = self.registered_users.get(user)
+        if not userdata:
+            return 0, 0, 0
+        return userdata.get("dailycalorylimit"), userdata.get("defaultdailyburn"), userdata.get("weightgoal")

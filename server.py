@@ -16,6 +16,27 @@ def main():
             return "this will be the home for user"
     return redirect(url_for("login"))
 
+
+@app.route("/profile/<user>", methods=['GET', 'POST'])
+def profile_page(user):
+    ses_token = request.cookies.get("session")
+    if not ses_token:
+        return redirect("/login")
+    if not db_access.check_session_token_validity(ses_token):
+        return redirect("/login")
+    if not ses_token.split("|")[0] == user:
+        return "You can't access other people's profile settings. Go away >:("
+    if request.method == "GET":
+        daily_target, daily_burn, weight_goal = db_access.fill_settings_form(user)
+        return render_template("profile.html",
+                               username=user,
+                               daily_target=daily_target,
+                               daily_burn=daily_burn,
+                               weight_goal=weight_goal)
+    elif request.method == "POST":
+        return "saving TBD"
+
+
 @app.route("/login", methods=['GET', 'POST'])
 def login():
     if request.method == "GET":
