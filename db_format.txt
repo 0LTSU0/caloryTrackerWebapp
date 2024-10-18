@@ -1,0 +1,27 @@
+users:
+-id INTEGER PRIMARY KEY AUTOINCREMENT
+-username TEXT
+-pwdhash TEXT
+-sessiontoken TEXT
+-sessiontokenexp INTEGER <epoch in seconds when session token shall expire>
+-dailycalories INTEGER <user specified amount of calories they should eat per day>
+-weightgoal REAL <user specified target weight>
+-normaldailyburn INTEGER <user specified number of calories they burn daily without any extra excersice>
+
+foods:
+-id INTEGER PRIMARY KEY AUTOINCREMENT
+-datetime INTEGER <time from user when the food item was posted>
+-food TEXT <what was eaten>
+-calories REAL <how many calories this record had>
+-note TEXT <optional text supplied by the user>
+
+weights:
+-id INTEGER PRIMARY KEY AUTOINCREMENT
+-datetime INTEGER <user supplied time for when this measurement was taken>
+-weight REAL <weight measurement>
+
+exersices:
+-id INTEGER PRIMARY KEY AUTOINCREMENT
+-datetime INTEGER <user supplied time for when this excersice was done>
+-calories REAL <how many calories was burnt doing this excersice>
+-desc TEXT <optional text description about excersice>

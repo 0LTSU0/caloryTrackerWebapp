@@ -33,21 +33,26 @@ class dbAccess():
         self.db = sqlite3.connect("db.db", check_same_thread=False)
         self.cur = self.db.cursor()
         self.init_tables()
-        print("init_database(), loading users to memory")
+        print("init_database(), loading userdata to memory")
         user_rows = self.cur.execute('SELECT * FROM users').fetchall()
         for row in user_rows:
-            #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal
+            #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal, normaldailyburn
             username = row[1]
-            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "food_records": [], "weight_records": []}
+            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": []}
             for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, food, calories, note
-                entry = {"datetime": row[1], "food": row[2], "note": row[3]}
+                entry = {"datetime": f_row[1], "food": f_row[2], "note": f_row[3]}
                 self.registered_users[username]["food_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
             for w_row in self.cur.execute(f'SELECT * FROM userdata_weights_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, weight
-                entry = {"datetime": row[1], "weight": row[2]}
+                entry = {"datetime": w_row[1], "weight": w_row[2]}
                 self.registered_users[username]["weight_records"].append(entry)
+                print("Loaded entry", entry, "for user", username)
+            for e_row in self.cur.execute(f'SELECT * FROM userdata_exercises_{username} ORDER BY datetime ASC').fetchall():
+                #row is: id, datetime, exercise, calories, desc
+                entry = {"datetime": e_row[1], "exercise": e_row[2], "calories": e_row[3], "desc": e_row[4]}
+                self.registered_users[username]["exercise_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
 
 
@@ -56,7 +61,7 @@ class dbAccess():
         res = self.cur.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
         if not ("users",) in res:
             print("Users table does not exist in db, creating now")
-            self.cur.execute("CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, pwdhash TEXT, sessiontoken TEXT, sessiontokenexp INTEGER, dailycalories INTEGER, weightgoal REAL)")
+            self.cur.execute("CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, pwdhash TEXT, sessiontoken TEXT, sessiontokenexp INTEGER, dailycalories INTEGER, weightgoal REAL, normaldailyburn INTEGER)")
         else:
             print("users table already in db, creating userdata tables for anyone missing one")
             for row in self.cur.execute('SELECT * FROM users').fetchall():
@@ -64,6 +69,9 @@ class dbAccess():
                 if not (user_table_name,) in res:
                     self.init_user_data_table(user_table_name)
                 user_table_name = f"userdata_weights_{row[1]}"
+                if not (user_table_name,) in res:
+                    self.init_user_data_table(user_table_name)
+                user_table_name = f"userdata_exercises_{row[1]}"
                 if not (user_table_name,) in res:
                     self.init_user_data_table(user_table_name)
                     
@@ -75,6 +83,9 @@ class dbAccess():
         elif "weights" in table_name:
             print("Creating table:", table_name)
             self.cur.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY AUTOINCREMENT, datetime INTEGER, weight REAL)")
+        elif "exercises" in table_name:
+            print("Creating table:", table_name)
+            self.cur.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY AUTOINCREMENT, datetime INTEGER, calories REAL, desc TEXT)")
         else:
             print("Attempted to create unknown type of userdata table", table_name)
 
@@ -105,7 +116,8 @@ class dbAccess():
                 self.db.commit()
                 self.init_user_data_table(f"userdata_foods_{username}")
                 self.init_user_data_table(f"userdata_weights_{username}")
-            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID, "dailycalorylimit": DEFAULT_CALORY_TARGET, "weightgoal": DEFAULT_WEIGHT_GOAL, "food_records": {}, "weight_records": {}} #TODO: if user id is used for something it needs to be set to correct value
+                self.init_user_data_table(f"userdata_exercises_{username}")
+            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID, "dailycalorylimit": DEFAULT_CALORY_TARGET, "weightgoal": DEFAULT_WEIGHT_GOAL, "defaultdailyburn": DEFAULT_CALORY_TARGET, "food_records": [], "weight_records": [], "exercise_records": []} #TODO: if user id is used for something it needs to be set to correct value
             return True, token
         except Exception as e:
             print("Exception in create_new_account()", e)

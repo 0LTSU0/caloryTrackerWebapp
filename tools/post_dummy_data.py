@@ -13,10 +13,12 @@ def register_new_users(num_users):
         username = 'user_' + ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(username_len))
         password_len = random.randint(8, 20)
         password = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(password_len))
+        session = requests.Session()
+        req = session.post(f"http://{URL}:5000/register", data={"username": username, "password": password, "repassword": password})
+        resp_token = session.cookies.get_dict().get("session")
+        print(req.status_code, "for creating user:", username, "password:", password, "response token:", resp_token)
         with open("created_users.txt", "a") as f:
-            f.write(username + " " + password + "\n")
-        req = requests.post(f"http://{URL}:5000/register", data={"username": username, "password": password, "repassword": password})
-        print(req.status_code, "for creating user:", username, "password:", password)
+            f.write(username + " " + password + " " + resp_token + "\n")
 
 
 def create_food_records(num_records, username):
