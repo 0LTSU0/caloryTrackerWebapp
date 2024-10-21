@@ -157,7 +157,7 @@ class dbAccess():
     def check_session_token_validity(self, ses_token):
         username = ses_token.split("|")[0]
         token = ses_token.split("|")[1]
-        if not username or not token or username in self.registered_users.keys() or token != self.registered_users[username].get("sessiontoken") or time.time() > self.registered_users[username].get("sessiontokenexp"):
+        if not username or not token or not username in self.registered_users.keys() or token != self.registered_users[username].get("sessiontoken") or time.time() > self.registered_users[username].get("sessiontokenexp"):
             return False
         return True
     
