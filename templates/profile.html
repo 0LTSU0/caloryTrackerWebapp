@@ -7,11 +7,45 @@
 	integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
 	crossorigin="anonymous">
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="/static/scripts.js"></script>
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand padleft30">CaloryTrackerWebapp</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarText">
+        <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/home">Food</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/weight">Weight</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link activetab" href="#">Profile</a>
+            </li>
+        </ul>
+        <!-- Apply ml-auto to push the text to the right -->
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item active padright30">
+                <a class="nav-link" href="/logout">Logged in as {{username}} (logout)</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
 
 <body>
     <script>0</script> <!--workaround for unstyled flash in firefox https://stackoverflow.com/a/57888310-->
-    <div class="container d-flex flex-column justify-content-center align-items-center" style="min-height: 100vh;">
+    
+    
+
+    <div class="container d-flex flex-column justify-content-center align-items-center" style="min-height: 90vh;">        
         <div class="row w-100" style="max-width: 500px;">
             <div class="col-12 text-center">
                 <h1 class="headertext">{{username}}'s settings</h1><br>
@@ -39,6 +73,9 @@
                             <span class="input-group-text" id="basic-addon3">kg</span>
                         </div>
                     </div>
+                    {% if show_error_msg %}
+                    <text style="font-weight: bold; color: crimson;" id="error_msg_from_flask">{{error_msg}}</text>
+                    {% endif %}
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Save</button><br>
                 </form>
             </div>

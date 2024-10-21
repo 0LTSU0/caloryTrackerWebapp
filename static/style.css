@@ -17,6 +17,17 @@
   padding-right: 20px;
 }
 
+.padleft30 {
+  padding-left: 30px;
+}
+
+.padright30 {
+  padding-right: 30px;
+}
+
+.activetab {
+  font-weight: bolder !important;
+}
 
 .centeredDiv {
   max-width: 650px;

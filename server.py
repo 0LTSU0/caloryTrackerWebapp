@@ -3,6 +3,7 @@ from flask import Flask
 from flask import redirect, render_template, url_for, request, jsonify, send_from_directory, make_response
 
 from dbaccess import *
+from helpers import *
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -32,9 +33,34 @@ def profile_page(user):
                                username=user,
                                daily_target=daily_target,
                                daily_burn=daily_burn,
-                               weight_goal=weight_goal)
+                               weight_goal=weight_goal,
+                               show_error_msg=False,
+                               error_msg="")
     elif request.method == "POST":
-        return "saving TBD"
+        error_msg = ""
+        new_daily_target = request.form.get("daily_calory_target_input")
+        new_daily_burn = request.form.get("daily_calory_burn_input")
+        new_weight_goal = request.form.get("weight_goal_input")
+        if not new_daily_target or not is_integer(new_daily_target):
+            error_msg += "Daily target needs to be integer! "
+        if not new_daily_burn or not is_integer(new_daily_burn):
+            error_msg += "Daily burn needs to be integer! "
+        if not new_weight_goal or not is_float(new_weight_goal):
+            error_msg += "Weight goal needs to be float! "
+        show_error_msg = error_msg != ""
+        if not show_error_msg:
+            succ, error = db_access.update_profile_settings(user, new_daily_target, new_daily_burn, new_weight_goal)
+            if not succ:
+                show_error_msg = True
+                error_msg += error
+        print("TODO save:", new_daily_target, new_daily_burn, new_weight_goal)
+        return render_template("profile.html",
+                               username=user,
+                               daily_target=new_daily_target,
+                               daily_burn=new_daily_burn,
+                               weight_goal=new_weight_goal,
+                               show_error_msg=show_error_msg,
+                               error_msg=error_msg)
 
 
 @app.route("/login", methods=['GET', 'POST'])
@@ -52,6 +78,16 @@ def login():
                 return response
         else:
             return render_template("login.html", show_error_msg=True)
+        
+
+@app.route("/logout", methods=['GET'])
+def logout():
+    ses_token = request.cookies.get("session")
+    if ses_token:
+        db_access.invalidate_sestoken(ses_token)
+        
+    return redirect("/login")
+
         
 @app.route("/register", methods=['GET', 'POST'])
 def register():

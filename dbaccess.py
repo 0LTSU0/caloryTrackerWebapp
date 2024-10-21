@@ -39,6 +39,7 @@ class dbAccess():
             #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal, normaldailyburn
             username = row[1]
             self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": []}
+            print("Loaded user:", username, self.registered_users[username])
             for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, food, calories, note
                 entry = {"datetime": f_row[1], "food": f_row[2], "note": f_row[3]}
@@ -100,6 +101,20 @@ class dbAccess():
         #with self.thlock:
         #    db_user = self.cur.execute(f"SELECT * FROM users WHERE username='{username}'").fetchone()
         return hash_password(pwd) == self.registered_users[username].get("pwdhash") #everything ok so far, check password
+    
+    def invalidate_sestoken(self, cookie):
+        username = cookie.split("|")[0]
+        if not username or not self.check_if_user_exists(username):
+            return #this was called with some nonsense token
+        try:
+            self.registered_users[username]["sessiontoken"] = ""
+            self.registered_users[username]["sessiontokenexp"] = 0
+            sql = "UPDATE users SET sessiontoken = ?, sessiontokenexp = ? WHERE username = ?"
+            with self.thlock:
+                self.cur.execute(sql, ("token", 0, username))
+                self.db.commit()
+        except: #whatever, token must have been invalid to begin with if something above failed
+            pass
 
     def check_if_user_exists(self, username):
         return username in self.registered_users.keys()
@@ -142,7 +157,7 @@ class dbAccess():
     def check_session_token_validity(self, ses_token):
         username = ses_token.split("|")[0]
         token = ses_token.split("|")[1]
-        if not username in self.registered_users.keys() or token != self.registered_users[username].get("sessiontoken") or time.time() > self.registered_users[username].get("sessiontokenexp"):
+        if not username or not token or username in self.registered_users.keys() or token != self.registered_users[username].get("sessiontoken") or time.time() > self.registered_users[username].get("sessiontokenexp"):
             return False
         return True
     
@@ -151,3 +166,19 @@ class dbAccess():
         if not userdata:
             return 0, 0, 0
         return userdata.get("dailycalorylimit"), userdata.get("defaultdailyburn"), userdata.get("weightgoal")
+    
+    def update_profile_settings(self, user, daily_calory, daily_burn, weight_goal):
+        try:
+            daily_calory_c = int(daily_calory)
+            daily_burn_c = int(daily_burn)
+            weight_goal_c = float(weight_goal)
+            with self.thlock:
+                sql = "UPDATE users SET dailycalories = ?, normaldailyburn = ?, weightgoal = ? WHERE username = ?"
+                self.cur.execute(sql, (daily_calory_c, daily_burn_c, weight_goal_c, user))
+                self.db.commit()
+            self.registered_users[user]["dailycalorylimit"] = daily_calory_c
+            self.registered_users[user]["defaultdailyburn"] = daily_burn_c
+            self.registered_users[user]["weightgoal"] = weight_goal_c
+            return True, ""
+        except Exception as e:
+            return False, "Unexpected error: " + str(e)
