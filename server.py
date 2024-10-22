@@ -14,8 +14,30 @@ def main():
     ses_token = request.cookies.get("session")
     if ses_token:
         if db_access.check_session_token_validity(ses_token):
-            return "this will be the home for user"
+            return redirect(url_for("foods_wo_date"))
     return redirect(url_for("login"))
+
+
+@app.route("/foods/day/<date>")
+def foods(date):
+    ses_token = request.cookies.get("session")
+    if not ses_token:
+        return redirect("/login")
+    if not db_access.check_session_token_validity(ses_token):
+        return redirect("/login")
+    username = ses_token.split("|")[0]
+    if request.method == "GET":
+        
+        return render_template("foods.html",
+                               username=username,
+                               date=date)
+    return f"This is food page for {username}"
+
+
+@app.route("/foods/day")
+def foods_wo_date():
+    date = epoch_to_ddmmyyyy(time.time()) #when accessing without requested date, assume server's today
+    return redirect(url_for("foods", date=date))
 
 
 @app.route("/profile/<user>", methods=['GET', 'POST'])

@@ -21,13 +21,13 @@
     <div class="collapse navbar-collapse" id="navbarText">
         <ul class="navbar-nav me-auto">
             <li class="nav-item">
-                <a class="nav-link" href="/foods/day">Food</a>
+                <a class="nav-link activetab" href="#">Food</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/weights">Weight</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link activetab" href="#">Profile</a>
+                <a class="nav-link" href="/profile/{{username}}">Profile</a>
             </li>
         </ul>
         <!-- Apply ml-auto to push the text to the right -->
@@ -39,15 +39,34 @@
     </div>
 </nav>
 
-
 <body>
     <script>0</script> <!--workaround for unstyled flash in firefox https://stackoverflow.com/a/57888310-->
-    <div class="container d-flex flex-column justify-content-center align-items-center" style="min-height: 90vh;">        
-        <div class="row w-100" style="max-width: 500px;">
-            <div class="col-12 text-center">
-                <h1 class="headertext">{{username}}'s settings</h1><br>
+    <div class="container d-flex flex-column justify-content-center align-items-center" style="margin-top: 20px;">        
+        <div class="row w-100" style="max-width: 850px;">
+            
+            <div class="col-2 justify-content-end">
+                <button class="btn btn-light darkerbutt" id="prev_date_button" onclick="goto_url('prev_date_button')">Previous day</button>
             </div>
-            <div class="col-12">
+            <div class="col-8 text-center">
+                <h1 class="headertext" id="headertext">Records for ???</h1><br>
+            </div>
+            <div class="col-2">
+                <button class="btn btn-light darkerbutt" id="next_date_button" onclick="goto_url('next_date_button')">Next day</button>
+            </div>
+            
+            <div class="col-12 text-center">
+                TODO
+            </div>
+
+            
+            <div class="col-6 d-flex justify-content-end" style="margin-top: 30px;">
+                <button class="btn btn-primary">Add exercise</button>
+            </div>
+            <div class="col-6 justify-content-start" style="margin-top: 30px;">
+                <button class="btn btn-primary">Add food</button>
+            </div>
+            
+            <!--div class="col-12">
                 <form style="width: 100%;" method="POST">
                     <div class="input-group mb-3">
                         <label for="daily_calory_target_input" class="col-sm-6 col-form-label">Daily calory target</label>
@@ -75,7 +94,7 @@
                     {% endif %}
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Save</button><br>
                 </form>
-            </div>
+            </div-->
         </div>
     </div>
 </body>

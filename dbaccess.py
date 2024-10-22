@@ -22,6 +22,14 @@ def generate_login_token(username):
     exp = int(time.time()) + LOGIN_VALIDITY_TIME
     return hash, exp
 
+
+#class foodAccess():
+#    def __init__(self, user):
+#        self.username = user
+#    
+#    def 
+
+
 class dbAccess():
     def __init__(self):
         self.db = None
@@ -95,11 +103,8 @@ class dbAccess():
         if not username or not pwd:
             return False
         print("Checking if following user exists:", username)
-        #user_exists = self.cur.execute(f"SELECT True FROM users WHERE username='{username}'").fetchone()
         if not username in self.registered_users.keys(): #user does not exist
             return False
-        #with self.thlock:
-        #    db_user = self.cur.execute(f"SELECT * FROM users WHERE username='{username}'").fetchone()
         return hash_password(pwd) == self.registered_users[username].get("pwdhash") #everything ok so far, check password
     
     def invalidate_sestoken(self, cookie):
@@ -182,3 +187,6 @@ class dbAccess():
             return True, ""
         except Exception as e:
             return False, "Unexpected error: " + str(e)
+        
+    def get_food_records(self, user):
+        return self.registered_users[user]["food_records"]
