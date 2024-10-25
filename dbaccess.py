@@ -2,6 +2,9 @@ import sqlite3
 import hashlib
 import threading
 import time
+import datetime
+
+from helpers import *
 
 PWD_SALT = "thisissomestringtobeusedasasaltforpwdhashing"
 TOKEN_SALT = "thisissomestringtobeusedassaltfortokens"
@@ -50,7 +53,7 @@ class dbAccess():
             print("Loaded user:", username, self.registered_users[username])
             for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, food, calories, note
-                entry = {"datetime": f_row[1], "food": f_row[2], "note": f_row[3]}
+                entry = {"datetime": f_row[1], "food": f_row[2], "calories": f_row[3], "note": f_row[4]}
                 self.registered_users[username]["food_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
             for w_row in self.cur.execute(f'SELECT * FROM userdata_weights_{username} ORDER BY datetime ASC').fetchall():
@@ -188,5 +191,49 @@ class dbAccess():
         except Exception as e:
             return False, "Unexpected error: " + str(e)
         
-    def get_food_records(self, user):
-        return self.registered_users[user]["food_records"]
+    def get_foods_day(self, user, date):
+        curr_date = ddmmyyy_to_datetime(date)
+        start_epoch = curr_date.timestamp()
+        curr_date += datetime.timedelta(days=1)
+        end_epoch = curr_date.timestamp()
+        res = []
+        for frecord in self.registered_users[user]["food_records"]:
+            if frecord["datetime"] >= start_epoch and frecord["datetime"] < end_epoch:
+                res.append(frecord)
+        
+        #temp test
+        #res = [{"datetime": 1729701467, "food": "paska", "calories": 1234, "note": "asdasdasdasdasdasd tää on aivan helevetin pitkä teksti koska ki miten tää käyttäytyy tuolla näkymössö"}, {"datetime": 1729701123, "food": "nakki", "calories": 321, "note": "uuuhhhhh nakkivene"}]
+        
+        return res
+    
+    def add_foods_for_user(self, user, add_foods):
+        try:
+            tablename = f"userdata_foods_{user}"
+            with self.thlock:
+                for entry in add_foods:
+                    datetime = entry["datetime"]
+                    food = entry['food']
+                    calories = entry['calories']
+                    note = entry['note']
+                    sql = f"INSERT INTO {tablename} (datetime, food, calories, note) VALUES (?, ?, ?, ?)"
+                    self.registered_users[user]["food_records"].append({"datetime": datetime, "food": food, "calories": calories, "note": note})
+                    self.cur.execute(sql, (datetime, food, calories, note))
+                self.db.commit()
+        except Exception as e:
+            print(e)
+
+    def delete_foods_for_user(self, user, delete_foods):
+        try:
+            tablename = f"userdata_foods_{user}"
+            with self.thlock:
+                for entry in delete_foods:
+                    datetime = entry["datetime"]
+                    food = entry['food']
+                    calories = entry['calories']
+                    note = entry['note']
+                    sql = f'DELETE FROM {tablename} WHERE datetime = ? AND food = ? AND calories = ? AND note = ?'
+                    self.registered_users[user]["food_records"].remove({"datetime": datetime, "food": food, "calories": calories, "note": note})
+                    self.cur.execute(sql, (datetime, food, calories, note))
+                self.db.commit()
+        except Exception as e:
+            print(e)

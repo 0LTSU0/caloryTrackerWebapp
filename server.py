@@ -18,8 +18,8 @@ def main():
     return redirect(url_for("login"))
 
 
-@app.route("/foods/day/<date>")
-def foods(date):
+@app.route("/foods/day/<date>", methods=["GET"])
+def foods_day(date):
     ses_token = request.cookies.get("session")
     if not ses_token:
         return redirect("/login")
@@ -27,11 +27,39 @@ def foods(date):
         return redirect("/login")
     username = ses_token.split("|")[0]
     if request.method == "GET":
-        
+        daily_foods = db_access.get_foods_day(username, date)
+        dailylimit, defaultburn, weightgoal = db_access.fill_settings_form(username)
+        sum_eaten = sum([float(x['calories']) for x in daily_foods])
+        if sum_eaten < dailylimit:
+            text = f"You have eaten {sum_eaten}kcal today. For your {dailylimit}kcal target, you have {dailylimit-sum_eaten}kcal remaining."
+            text_good = True
+        else:
+            text = f"You have eaten {sum_eaten}kcal today. For your {dailylimit}kcal target, you are {abs(dailylimit-sum_eaten)}kcal over."
+            text_good = False
         return render_template("foods.html",
                                username=username,
-                               date=date)
-    return f"This is food page for {username}"
+                               date=date,
+                               records=daily_foods,
+                               remainder_text=text,
+                               remainder_text_positive=text_good)
+    
+
+@app.route("/foods/day/<date>/post", methods=["POST"])
+def add_new_foods_day(date):
+    ses_token = request.cookies.get("session")
+    if not ses_token:
+        return redirect("/login")
+    if not db_access.check_session_token_validity(ses_token):
+        return redirect("/login")
+    username = ses_token.split("|")[0]
+    redirect_addr = request.base_url.rstrip("/post")
+    data = request.get_json()
+    data = numerize_food_vals_in_new_data(data)
+    current_items_on_day = db_access.get_foods_day(username, date)
+    items_to_delete, items_to_add = get_what_needs_update_food_day(current_items_on_day, data)
+    db_access.add_foods_for_user(username, items_to_add)
+    db_access.delete_foods_for_user(username, items_to_delete)
+    return redirect(redirect_addr)
 
 
 @app.route("/foods/day")

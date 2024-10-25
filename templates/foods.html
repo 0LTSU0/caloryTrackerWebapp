@@ -54,16 +54,47 @@
                 <button class="btn btn-light darkerbutt" id="next_date_button" onclick="goto_url('next_date_button')">Next day</button>
             </div>
             
-            <div class="col-12 text-center">
-                TODO
-            </div>
-
             
-            <div class="col-6 d-flex justify-content-end" style="margin-top: 30px;">
-                <button class="btn btn-primary">Add exercise</button>
+            <div class="col-12 text-center">
+                {% if remainder_text_positive %}
+                <a class="positive_text">{{remainder_text}}</a>
+                {% else %}
+                <a class="negative_text">{{remainder_text}}</a>
+                {% endif %}
             </div>
-            <div class="col-6 justify-content-start" style="margin-top: 30px;">
-                <button class="btn btn-primary">Add food</button>
+            
+            
+            <table class="table table-striped" style="margin-top: 30px;">
+                <thead>
+                    <tr>
+                        <th scope="col">Time Added</th>
+                        <th scope="col">Food</th>
+                        <th scope="col">Calories</th>
+                        <th scope="col">Notes</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody id="food_table_body">
+                    {% for food in records %}
+                    <tr>
+                        <td>{{food['datetime']}}</td>
+                        <td>{{food['food']}}</td>
+                        <td>{{food['calories']}}</td>
+                        <td>{{food['note']}}</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="removeRowFromTable(this)">Delete</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div class="col-4 d-flex justify-content-end" style="margin-top: 30px;">
+                <button class="btn btn-primary" style="width: 90%;">Add exercise</button>
+            </div>
+            <div class="col-4 d-flex justify-content-center" style="margin-top: 30px;">
+                <button class="btn btn-primary" style="width: 90%;" onclick="addNewRowToFoodTable()">Add food</button>
+            </div>
+            <div class="col-4 justify-content-start" style="margin-top: 30px;">
+                <button class="btn btn-success" style="width: 90%;" onclick="postFoodsDay()">Save changes</button>
             </div>
             
             <!--div class="col-12">

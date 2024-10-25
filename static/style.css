@@ -48,3 +48,15 @@
 .darkerbutt {
  background-color: lightgray !important; 
 }
+
+.positive_text {
+  color: green;
+  font-weight: bold;
+  text-decoration: none !important;
+}
+
+.negative_text {
+  color: crimson;
+  font-weight: bold;
+  text-decoration: none !important;
+}
