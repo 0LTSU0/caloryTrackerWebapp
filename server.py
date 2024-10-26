@@ -27,25 +27,28 @@ def foods_day(date):
         return redirect("/login")
     username = ses_token.split("|")[0]
     if request.method == "GET":
-        daily_foods = db_access.get_foods_day(username, date)
+        daily_foods = db_access.get_entries_day(username, date, "food_records")
+        daily_exercises = db_access.get_entries_day(username, date, "exercise_records")
         dailylimit, defaultburn, weightgoal = db_access.fill_settings_form(username)
         sum_eaten = sum([float(x['calories']) for x in daily_foods])
-        if sum_eaten < dailylimit:
-            text = f"You have eaten {sum_eaten}kcal today. For your {dailylimit}kcal target, you have {dailylimit-sum_eaten}kcal remaining."
+        sum_exercised = sum([float(x['calories']) for x in daily_exercises])
+        if (sum_eaten - sum_exercised) < dailylimit:
+            text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you have {dailylimit+sum_exercised-sum_eaten}kcal remaining."
             text_good = True
         else:
-            text = f"You have eaten {sum_eaten}kcal today. For your {dailylimit}kcal target, you are {abs(dailylimit-sum_eaten)}kcal over."
+            text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {abs(dailylimit-sum_eaten+sum_exercised)}kcal over."
             text_good = False
         return render_template("foods.html",
                                username=username,
                                date=date,
                                records=daily_foods,
+                               e_records=daily_exercises,
                                remainder_text=text,
                                remainder_text_positive=text_good)
     
 
 @app.route("/foods/day/<date>/post", methods=["POST"])
-def add_new_foods_day(date):
+def add_new_foods_day(date): #NOTE: this also handles exercises since they are on the same page
     ses_token = request.cookies.get("session")
     if not ses_token:
         return redirect("/login")
@@ -53,19 +56,25 @@ def add_new_foods_day(date):
         return redirect("/login")
     username = ses_token.split("|")[0]
     redirect_addr = request.base_url.rstrip("/post")
-    data = request.get_json()
-    data = numerize_food_vals_in_new_data(data)
-    current_items_on_day = db_access.get_foods_day(username, date)
-    items_to_delete, items_to_add = get_what_needs_update_food_day(current_items_on_day, data)
-    db_access.add_foods_for_user(username, items_to_add)
-    db_access.delete_foods_for_user(username, items_to_delete)
+    fdata = request.get_json()["foods"]
+    fdata = numerize_food_vals_in_new_data(fdata)
+    edata = request.get_json()["exercises"]
+    edata = numerize_food_vals_in_new_data(edata)
+    current_fitems_on_day = db_access.get_entries_day(username, date, "food_records")
+    current_eitems_on_day = db_access.get_entries_day(username, date, "exercise_records")
+    fitems_to_delete, fitems_to_add = get_what_needs_update_day(current_fitems_on_day, fdata)
+    eitems_to_delete, eitems_to_add = get_what_needs_update_day(current_eitems_on_day, edata)
+    db_access.add_foods_for_user(username, fitems_to_add)
+    db_access.delete_foods_for_user(username, fitems_to_delete)
+    db_access.add_exercises_for_user(username, eitems_to_add)
+    db_access.delete_exercises_for_user(username, eitems_to_delete)
     return redirect(redirect_addr)
 
 
 @app.route("/foods/day")
 def foods_wo_date():
     date = epoch_to_ddmmyyyy(time.time()) #when accessing without requested date, assume server's today
-    return redirect(url_for("foods", date=date))
+    return redirect(url_for("foods_day", date=date))
 
 
 @app.route("/profile/<user>", methods=['GET', 'POST'])

@@ -62,8 +62,8 @@ class dbAccess():
                 self.registered_users[username]["weight_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
             for e_row in self.cur.execute(f'SELECT * FROM userdata_exercises_{username} ORDER BY datetime ASC').fetchall():
-                #row is: id, datetime, exercise, calories, desc
-                entry = {"datetime": e_row[1], "exercise": e_row[2], "calories": e_row[3], "desc": e_row[4]}
+                #row is: id, datetime, calories, desc
+                entry = {"datetime": e_row[1], "calories": e_row[2], "desc": e_row[3]}
                 self.registered_users[username]["exercise_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
 
@@ -191,19 +191,15 @@ class dbAccess():
         except Exception as e:
             return False, "Unexpected error: " + str(e)
         
-    def get_foods_day(self, user, date):
+    def get_entries_day(self, user, date, search):
         curr_date = ddmmyyy_to_datetime(date)
         start_epoch = curr_date.timestamp()
         curr_date += datetime.timedelta(days=1)
         end_epoch = curr_date.timestamp()
         res = []
-        for frecord in self.registered_users[user]["food_records"]:
+        for frecord in self.registered_users[user][search]:
             if frecord["datetime"] >= start_epoch and frecord["datetime"] < end_epoch:
                 res.append(frecord)
-        
-        #temp test
-        #res = [{"datetime": 1729701467, "food": "paska", "calories": 1234, "note": "asdasdasdasdasdasd tää on aivan helevetin pitkä teksti koska ki miten tää käyttäytyy tuolla näkymössö"}, {"datetime": 1729701123, "food": "nakki", "calories": 321, "note": "uuuhhhhh nakkivene"}]
-        
         return res
     
     def add_foods_for_user(self, user, add_foods):
@@ -234,6 +230,36 @@ class dbAccess():
                     sql = f'DELETE FROM {tablename} WHERE datetime = ? AND food = ? AND calories = ? AND note = ?'
                     self.registered_users[user]["food_records"].remove({"datetime": datetime, "food": food, "calories": calories, "note": note})
                     self.cur.execute(sql, (datetime, food, calories, note))
+                self.db.commit()
+        except Exception as e:
+            print(e)
+
+    def add_exercises_for_user(self, user, add_exercises):
+        try:
+            tablename = f"userdata_exercises_{user}"
+            with self.thlock:
+                for entry in add_exercises:
+                    datetime = entry["datetime"]
+                    calories = entry['calories']
+                    desc = entry['desc']
+                    sql = f"INSERT INTO {tablename} (datetime, calories, desc) VALUES (?, ?, ?)"
+                    self.registered_users[user]["exercise_records"].append({"datetime": datetime, "calories": calories, "desc": desc})
+                    self.cur.execute(sql, (datetime, calories, desc))
+                self.db.commit()
+        except Exception as e:
+            print(e)
+
+    def delete_exercises_for_user(self, user, delete_exercises):
+        try:
+            tablename = f"userdata_exercises_{user}"
+            with self.thlock:
+                for entry in delete_exercises:
+                    datetime = entry["datetime"]
+                    calories = entry['calories']
+                    desc = entry['desc']
+                    sql = f'DELETE FROM {tablename} WHERE datetime = ? AND calories = ? AND desc = ?'
+                    self.registered_users[user]["exercise_records"].remove({"datetime": datetime, "calories": calories, "desc": desc})
+                    self.cur.execute(sql, (datetime, calories, desc))
                 self.db.commit()
         except Exception as e:
             print(e)

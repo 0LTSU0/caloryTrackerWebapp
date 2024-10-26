@@ -14,7 +14,7 @@ def epoch_to_ddmmyyyy(epoch_time):
 def ddmmyyy_to_datetime(timestring):
     return dt.strptime(timestring, "%d%m%Y")
 
-def get_what_needs_update_food_day(old_data, new_data):
+def get_what_needs_update_day(old_data, new_data):
     pass
     #if some old record is no longer in new_data, it must be requested to be deleted
     # Also 
