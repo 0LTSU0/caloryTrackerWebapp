@@ -10,7 +10,12 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="/static/scripts.js"></script>
+<!--script type="module" src="/static/autocompletescript.js"></script-->
+<!--script type="module" src="/static/autocomplete.min.js"></script-->
+<!--script src="https://cdn.jsdelivr.net/gh/xcash/bootstrap-autocomplete@v2.3.7/dist/latest/bootstrap-autocomplete.min.js"></script-->
+<script src="/static/bootstrap-autocomplete.min.js"></script>
 
+<div id="foodrecms" data-foodrecms='{{ foodrecms|tojson }}'></div>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand padleft30">CaloryTrackerWebapp</a>
@@ -78,9 +83,9 @@
                     {% for food in records %}
                     <tr>
                         <td>{{food['datetime']}}</td>
-                        <td>{{food['food']}}</td>
-                        <td>{{food['calories']}}</td>
-                        <td>{{food['note']}}</td>
+                        <td data-oldEntry="true">{{food['food']}}</td>
+                        <td data-oldEntry="true">{{food['calories']}}</td>
+                        <td data-oldEntry="true">{{food['note']}}</td>
                         <td><button class="btn btn-danger btn-sm" onclick="removeRowFromTable(this)">Delete</button></td>
                     </tr>
                     {% endfor %}

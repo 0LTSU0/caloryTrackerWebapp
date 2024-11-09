@@ -56,6 +56,7 @@ class dbAccess():
                 entry = {"datetime": f_row[1], "food": f_row[2], "calories": f_row[3], "note": f_row[4]}
                 self.registered_users[username]["food_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
+            self.registered_users[username]["autofills"] = generate_autofill_recommendations(self.registered_users[username]["food_records"])
             for w_row in self.cur.execute(f'SELECT * FROM userdata_weights_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, weight
                 entry = {"datetime": w_row[1], "weight": w_row[2]}

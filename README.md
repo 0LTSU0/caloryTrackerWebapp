@@ -8,3 +8,6 @@ Small, self-hostable calory/exercise/weight tracker flask application.
 - Weight monitoring
 - Improve error handling. Currently if something goes wrong error is only logged to browser console (if even that)
 - Autofill for food records
+
+## ThirdParty content used:
+- https://blog.getbootstrap.com/2024/02/20/bootstrap-5-3-3/

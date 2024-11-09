@@ -38,13 +38,15 @@ def foods_day(date):
         else:
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {abs(dailylimit-sum_eaten+sum_exercised)}kcal over."
             text_good = False
+        recommendations = ["option1", "option2", "option3", "option4"]
         return render_template("foods.html",
                                username=username,
                                date=date,
                                records=daily_foods,
                                e_records=daily_exercises,
                                remainder_text=text,
-                               remainder_text_positive=text_good)
+                               remainder_text_positive=text_good,
+                               foodrecms=recommendations)
     
 
 @app.route("/foods/day/<date>/post", methods=["POST"])

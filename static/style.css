@@ -60,3 +60,19 @@
   font-weight: bold;
   text-decoration: none !important;
 }
+
+.autocomplete-suggestions {
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  position: absolute;
+  background: white;
+  width: 200px;
+}
+.autocomplete-suggestion {
+  padding: 8px;
+  cursor: pointer;
+}
+.autocomplete-suggestion:hover {
+  background-color: #ddd;
+}

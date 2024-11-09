@@ -3,7 +3,7 @@ var usernameAvailabilityCheckInProgress = false;
 const dates = ["Sunday", "Moday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const editable_food_row = '<tr>'+
                           '<td epoch=__ToBeForced1__>__ToBeForced2__</td>'+
-                          '<td><input type="text"/></td>'+
+                          '<td> <input type="text" id="foodInput__ToBeForced3__"/><div class="autocomplete-suggestions" id="recomBox__ToBeForced3__"></div> </td>'+
                           '<td><input type="number"/></td>'+
                           '<td><input type="text"/></td>'+
                           '<td><button class="btn btn-danger btn-sm" onclick="removeRowFromTable(this)">Delete</button></td>'+
@@ -15,6 +15,18 @@ const editable_exercise_row = '<tr>'+
                               '<td><button class="btn btn-danger btn-sm" onclick="removeRowFromTable(this)">Delete</button></td>'+
                               '</tr>';
 const colWithTime = 0;
+
+function makeid(length) { //https://stackoverflow.com/a/1349426
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < length) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
+    return result;
+}
 
 function get_date_with_day_name(datestr)
 {
@@ -45,12 +57,45 @@ function goto_url(id)
     window.location.href = $("#" + id).attr('href')
 }
 
+function addRecommendationsToFoodFields(id)
+{
+    console.log("we should add recommendations to recommendation element with id", id)
+    let recommendations = JSON.parse(document.getElementById("foodrecms").dataset.foodrecms);
+    let recomBox = document.getElementById("recomBox"+id);
+    console.log(recomBox)
+    recommendations.forEach(suggestion => {
+        const item = document.createElement("div");
+        item.classList.add("autocomplete-suggestion");
+        item.textContent = suggestion;
+        //item.onclick = () => {
+        //    item.preventDefault();
+        //    console.log("clicked", suggestion)
+        //};
+        item.addEventListener("mousedown", (event) => {
+            event.preventDefault(); // Prevents input from losing focus immediately (otherwise foodInput blur eventlistener is ran before value is set anywhere)
+            console.log("clicked", suggestion);  // Log the clicked suggestion's text content
+            document.getElementById("foodInput" + id).value = suggestion;  // Optionally, set input value
+            document.getElementById("recomBox"+id).style.display = "none";
+        });
+        recomBox.appendChild(item);
+    });
+    recomBox.style.display = "none";
+    let thisFoodInput = document.getElementById("foodInput"+id);
+    thisFoodInput.addEventListener("focus", (event) => {
+        document.getElementById("recomBox"+id).style.display = "";
+    });
+    thisFoodInput.addEventListener("blur", (event) => {
+        document.getElementById("recomBox"+id).style.display = "none";
+    });
+}
+
 function removeRowFromTable(button)
 {
     let deleteRowNum = button.getAttribute("row_identifier");
     console.debug("row wanted to be deleted is", deleteRowNum);
     let table_name = button.parentElement.parentElement.parentElement.getAttribute("id")
     $("#" + table_name + " tr:nth-child(" + deleteRowNum + ")").remove();
+    setRowNumbersToDeleteButtons("food_table_body");
 }
 
 function addNewRowToFoodTable()
@@ -59,12 +104,15 @@ function addNewRowToFoodTable()
     let dateStr = epochToReadable(currentEpoch)
     let editable_food_row_w_time = editable_food_row.replace("__ToBeForced2__", dateStr);
     editable_food_row_w_time = editable_food_row_w_time.replace("__ToBeForced1__", currentEpoch);
+    let randomId = makeid(10)
+    editable_food_row_w_time = editable_food_row_w_time.replaceAll("__ToBeForced3__", randomId);
     if ($('#food_table_body tr').length) {
         $('#food_table_body tr:last').after(editable_food_row_w_time);
     } else {
         $('#food_table_body').append(editable_food_row_w_time);
     }
     setRowNumbersToDeleteButtons("food_table_body");
+    addRecommendationsToFoodFields(randomId)
 }
 
 function addNewRowToExerciseTable()
@@ -129,21 +177,42 @@ function postFoodsAndExercisesDay()
             if (cellElem.find('button').length > 0){
                 return; // skip delete (or possible future edit) button cells
             }
-            if (cellElem.text()) //data in cells without user input boxes should be findable by this
+            
+            if (ctr==colWithTime) // time is not user editable so at least for now it can always be taken like this
             {
-                if (ctr == colWithTime)
-                {
-                    dataEntry[dataKeys[ctr]] = cellElem.attr("epoch")
-                } else {
-                    dataEntry[dataKeys[ctr]] = cellElem.text()
-                }
-            } else if (cellElem.find('input').length > 0) {
+                dataEntry[dataKeys[ctr]] = cellElem.attr("epoch")
+            }
+            else if (cellElem.attr("data-oldEntry") === "true") //this is an old entry
+            {
+                dataEntry[dataKeys[ctr]] = cellElem.text()
+            }
+            else if (cellElem.find('input').length > 0) //there is some kind of user input in this cell
+            {
                 let inputElem = cellElem.find('input');
                 dataEntry[dataKeys[ctr]] = inputElem.val()
-            } else { //the cell must be empty
+            }
+            else //the cell must be empty
+            {
                 dataEntry[dataKeys[ctr]] = "";
             }
             ctr++;
+            
+            //old shit that no longer works with recommendation items
+            //if (cellElem.text()) //data in cells without user input boxes should be findable by this
+            //{
+            //    if (ctr == colWithTime)
+            //    {
+            //        dataEntry[dataKeys[ctr]] = cellElem.attr("epoch")
+            //    } else {
+            //        dataEntry[dataKeys[ctr]] = cellElem.text()
+            //    }
+            //} else if (cellElem.find('input').length > 0) {
+            //    let inputElem = cellElem.find('input');
+            //    dataEntry[dataKeys[ctr]] = inputElem.val()
+            //} else { //the cell must be empty
+            //    dataEntry[dataKeys[ctr]] = "";
+            //}
+            
         })
         data.push(dataEntry);
     });

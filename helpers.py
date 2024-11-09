@@ -49,3 +49,17 @@ def numerize_food_vals_in_new_data(data):
         converted.append(item)
     return converted
 
+def generate_autofill_recommendations(f_entries):
+    res = []
+    for entry in f_entries:
+        tupl = create_recommendation_tuple(entry)
+        if tupl and not tupl in res:
+            res.append(tupl)
+    return res
+
+def create_recommendation_tuple(f_entry):
+    if f_entry.get("food") and f_entry.get("calories"): #only create tuple if food name and calories exist
+        t = (f_entry.get("food"), f_entry.get("calories"))
+        return t
+    return None
+
