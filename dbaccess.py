@@ -203,6 +203,13 @@ class dbAccess():
                 res.append(frecord)
         return res
     
+    #note to self: should be used somewhat sparingly since might return a lot of stuff
+    def get_entries_all(self, user, search):
+        res = []
+        for frecord in self.registered_users[user][search]:
+            res.append(frecord)
+        return res
+    
     def add_foods_for_user(self, user, add_foods):
         try:
             tablename = f"userdata_foods_{user}"

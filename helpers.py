@@ -50,12 +50,18 @@ def numerize_food_vals_in_new_data(data):
     return converted
 
 def generate_autofill_recommendations(f_entries):
-    res = []
+    tmp = {}
     for entry in f_entries:
         tupl = create_recommendation_tuple(entry)
-        if tupl and not tupl in res:
-            res.append(tupl)
-    return res
+        if not tupl:
+            continue
+        if tupl in tmp.keys():
+            tmp[tupl] += 1
+        else:
+            tmp[tupl] = 1
+    #at this point well have dict with item: number of occurances -> sort and return the tuples
+    sorted_foods = [key for key, value in sorted(tmp.items(), key=lambda item: item[1], reverse=True)]
+    return sorted_foods
 
 def create_recommendation_tuple(f_entry):
     if f_entry.get("food") and f_entry.get("calories"): #only create tuple if food name and calories exist
