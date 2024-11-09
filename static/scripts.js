@@ -4,7 +4,7 @@ const dates = ["Sunday", "Moday", "Tuesday", "Wednesday", "Thursday", "Friday", 
 const editable_food_row = '<tr>'+
                           '<td epoch=__ToBeForced1__>__ToBeForced2__</td>'+
                           '<td> <input type="text" id="foodInput__ToBeForced3__"/><div class="autocomplete-suggestions" id="recomBox__ToBeForced3__"></div> </td>'+
-                          '<td><input type="number"/></td>'+
+                          '<td><input type="number" id="caloryInput__ToBeForced3__"/></td>'+
                           '<td><input type="text"/></td>'+
                           '<td><button class="btn btn-danger btn-sm" onclick="removeRowFromTable(this)">Delete</button></td>'+
                           '</tr>';
@@ -66,15 +66,13 @@ function addRecommendationsToFoodFields(id)
     recommendations.forEach(suggestion => {
         const item = document.createElement("div");
         item.classList.add("autocomplete-suggestion");
-        item.textContent = suggestion;
-        //item.onclick = () => {
-        //    item.preventDefault();
-        //    console.log("clicked", suggestion)
-        //};
+        item.textContent = suggestion[0] + " (" + suggestion[1].toString() + "kcal)";
+        item.setAttribute("calorycount", suggestion[1]);
         item.addEventListener("mousedown", (event) => {
             event.preventDefault(); // Prevents input from losing focus immediately (otherwise foodInput blur eventlistener is ran before value is set anywhere)
-            console.log("clicked", suggestion);  // Log the clicked suggestion's text content
-            document.getElementById("foodInput" + id).value = suggestion;  // Optionally, set input value
+            console.log("wanted to use suggestion:", suggestion);
+            document.getElementById("foodInput" + id).value = suggestion[0];
+            document.getElementById("caloryInput" + id).value = suggestion[1];
             document.getElementById("recomBox"+id).style.display = "none";
         });
         recomBox.appendChild(item);
@@ -112,7 +110,21 @@ function addNewRowToFoodTable()
         $('#food_table_body').append(editable_food_row_w_time);
     }
     setRowNumbersToDeleteButtons("food_table_body");
-    addRecommendationsToFoodFields(randomId)
+    addRecommendationsToFoodFields(randomId);
+    let addedFoodInput = document.getElementById("foodInput"+randomId);
+    addedFoodInput.addEventListener("input", (event) => {
+        $('#recomBox'+randomId).children().each(function () {
+            let currentlyWritten = document.getElementById('foodInput'+randomId).value; //for some reason jquerys .val() does not see the value here
+            console.log(currentlyWritten)
+            if (!$(this).text().includes(currentlyWritten))
+            {
+                $(this).hide()
+            } else {
+                $(this).show()
+            }
+        });
+    })
+
 }
 
 function addNewRowToExerciseTable()

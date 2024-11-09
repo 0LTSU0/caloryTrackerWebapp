@@ -38,7 +38,7 @@ def foods_day(date):
         else:
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {abs(dailylimit-sum_eaten+sum_exercised)}kcal over."
             text_good = False
-        recommendations = ["option1", "option2", "option3", "option4"]
+        recommendations = [("option1", 123.2), ("option2", 223.2), ("option3", 323.2), ("option4", 423.2), ("option5", 523.2)]
         return render_template("foods.html",
                                username=username,
                                date=date,
