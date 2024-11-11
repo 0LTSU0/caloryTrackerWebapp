@@ -4,6 +4,7 @@ from flask import redirect, render_template, url_for, request, jsonify, send_fro
 
 from dbaccess import *
 from helpers import *
+from plotgen import *
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -39,6 +40,14 @@ def foods_day(date):
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {abs(dailylimit-sum_eaten+sum_exercised)}kcal over."
             text_good = False
         recommendations = generate_autofill_recommendations(db_access.get_entries_all(username, "food_records"))
+
+        
+        #todo move plot stuff to separate method
+        plot_endt = epoch_for_date(date, True)
+        plot_startt = epoch_for_date(get_datestring_at_offset(date, -7), False)
+        plot_data = db_access.get_daily_entries_in_range(username, plot_startt, plot_endt)
+        plotly = generate_food_record_plot(plot_data, dailylimit)
+
         return render_template("foods.html",
                                username=username,
                                date=date,
@@ -46,7 +55,8 @@ def foods_day(date):
                                e_records=daily_exercises,
                                remainder_text=text,
                                remainder_text_positive=text_good,
-                               foodrecms=recommendations)
+                               foodrecms=recommendations,
+                               plotlyhtml=plotly)
     
 
 @app.route("/foods/day/<date>/post", methods=["POST"])

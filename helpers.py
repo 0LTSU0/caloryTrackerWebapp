@@ -1,6 +1,7 @@
 import re
 import time
 from datetime import datetime as dt
+from datetime import timedelta as td
 
 def is_integer(s): #from chatgpt :)
     return re.fullmatch(r"[+-]?\d+", s) is not None
@@ -9,7 +10,7 @@ def is_float(s): #from chatgpt :)
     return re.fullmatch(r"[+-]?\d*\.\d+", s) is not None
 
 def epoch_to_ddmmyyyy(epoch_time):
-    return time.strftime('%d%m%Y', time.gmtime(epoch_time))
+    return time.strftime('%d%m%Y', time.localtime(epoch_time))
 
 def ddmmyyy_to_datetime(timestring):
     return dt.strptime(timestring, "%d%m%Y")
@@ -69,3 +70,15 @@ def create_recommendation_tuple(f_entry):
         return t
     return None
 
+def epoch_for_date(date, eod=False):
+    #date is string in format of DDMMYYY and mode is eod (end of day -> epoch for that day at 23:59:59) or sod (start of day -> epoch for that day at 0:0:0)
+    curr_date = ddmmyyy_to_datetime(date) # this results in timestamp at sod
+    if eod:
+        curr_date = curr_date.replace(hour=23, minute=59, second=59)
+    return curr_date.timestamp()
+
+def get_datestring_at_offset(date, offset):
+    #date is some DDMMYYY string. If offset is e.g. -7, this function returns DDMMYYY from a week ago
+    start_date = ddmmyyy_to_datetime(date)
+    new_date = start_date + td(days=offset)
+    return epoch_to_ddmmyyyy(new_date.timestamp())

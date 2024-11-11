@@ -203,6 +203,17 @@ class dbAccess():
                 res.append(frecord)
         return res
     
+    def get_daily_entries_in_range(self, user, st, et): #TODO: imporove this whole graph generation logic, it currently translates timestamps to strings back many times for no reason
+        curr_date = dt.fromtimestamp(st)
+        res = {}
+        while curr_date.timestamp() < et:
+            key = f"{curr_date.day}.{curr_date.month}.{curr_date.year}"
+            foods = self.get_entries_day(user, epoch_to_ddmmyyyy(curr_date.timestamp()), "food_records")
+            exercises = self.get_entries_day(user, epoch_to_ddmmyyyy(curr_date.timestamp()), "exercise_records")
+            res[key] = {"food": foods, "exercise": exercises}
+            curr_date = curr_date + td(days=1)
+        return res
+    
     #note to self: should be used somewhat sparingly since might return a lot of stuff
     def get_entries_all(self, user, search):
         res = []
