@@ -10,3 +10,6 @@ Small, self-hostable calory/exercise/weight tracker flask application.
   
 ## ThirdParty content used:
 - https://blog.getbootstrap.com/2024/02/20/bootstrap-5-3-3/
+- https://jquery.com/
+- https://docs.python.org/3/library/sqlite3.html
+- https://flask.palletsprojects.com/en/stable/
