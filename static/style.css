@@ -76,3 +76,12 @@
 .autocomplete-suggestion:hover {
   background-color: #ddd;
 }
+
+.plotlygraphcontainer {
+  margin-top: 20px;
+}
+
+.weight_input_size_constraints {
+  height: 30px !important;
+  width: 90% !important;
+}

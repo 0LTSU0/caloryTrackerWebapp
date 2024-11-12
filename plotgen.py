@@ -36,7 +36,9 @@ def generate_food_record_plot(entries: dict, target=0, show=False):
         mode="lines"
     ))
 
-    fig.update_layout(barmode='stack')
+    fig.update_layout(barmode='stack',
+                      margin=dict(l=20, r=20, t=20, b=20)
+                    )
     if show:
         fig.show()
     else:

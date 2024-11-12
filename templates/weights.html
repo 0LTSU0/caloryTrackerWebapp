@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<link rel="stylesheet" type="text/css" href="/static/style.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+<script
+	src="https://code.jquery.com/jquery-3.7.1.min.js"
+	integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+	crossorigin="anonymous">
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="/static/scripts.js"></script>
+
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand padleft30">CaloryTrackerWebapp</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarText">
+        <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="/foods/day">Food</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link activetab" href="">Weight</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/profile/{{username}}">Profile</a>
+            </li>
+        </ul>
+        <!-- Apply ml-auto to push the text to the right -->
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item active padright30">
+                <a class="nav-link" href="/logout">Logged in as {{username}} (logout)</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<body>
+    <script>0</script> <!--workaround for unstyled flash in firefox https://stackoverflow.com/a/57888310-->
+    <div class="container d-flex flex-column justify-content-center align-items-center" style="margin-top: 20px;">        
+        <div class="row w-100" style="max-width: 850px;">
+            <div class="col-4 d-flex justify-content-end" style="margin-top: 30px;">
+                <a id="weighttimestamp">New weight @__time__:</a>
+            </div>
+            <div class="col-4 d-flex justify-content-center" style="margin-top: 30px;">
+                <input type="number" id="weightvalueinput" class="weight_input_size_constraints" placeholder="66.6"/><a>kg</a>
+            </div>
+            <div class="col-4 justify-content-start" style="margin-top: 30px;">
+                <button class="btn btn-primary weight_input_size_constraints" style="line-height: 0px;" onclick="submitNewWeight()">Submit</button>
+            </div>
+            <div style="display: none;" id="submiterror">
+                <div class="col-12 d-flex justify-content-center" style="margin-top: 10px;">
+                    <a class="negative_text">Submit failed :( Please check that weght is valid float.</a>
+                </div>
+            </div>
+            
+        
+        
+        </div>
+        <!--div id="plotlygraph" class="plotlygraphcontainer">{{plotlyhtml | safe}}</div-->
+    </div>
+</body>

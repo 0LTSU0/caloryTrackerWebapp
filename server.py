@@ -31,13 +31,13 @@ def foods_day(date):
         daily_foods = db_access.get_entries_day(username, date, "food_records")
         daily_exercises = db_access.get_entries_day(username, date, "exercise_records")
         dailylimit, defaultburn, weightgoal = db_access.fill_settings_form(username)
-        sum_eaten = sum([float(x['calories']) for x in daily_foods])
-        sum_exercised = sum([float(x['calories']) for x in daily_exercises])
+        sum_eaten = round(sum([float(x['calories']) for x in daily_foods]), 2)
+        sum_exercised = round(sum([float(x['calories']) for x in daily_exercises]), 2)
         if (sum_eaten - sum_exercised) < dailylimit:
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you have {dailylimit+sum_exercised-sum_eaten}kcal remaining."
             text_good = True
         else:
-            text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {abs(dailylimit-sum_eaten+sum_exercised)}kcal over."
+            text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {round(abs(dailylimit-sum_eaten+sum_exercised), 2)}kcal over."
             text_good = False
         recommendations = generate_autofill_recommendations(db_access.get_entries_all(username, "food_records"))
 
@@ -124,7 +124,6 @@ def profile_page(user):
             if not succ:
                 show_error_msg = True
                 error_msg += error
-        print("TODO save:", new_daily_target, new_daily_burn, new_weight_goal)
         return render_template("profile.html",
                                username=user,
                                daily_target=new_daily_target,
@@ -132,6 +131,20 @@ def profile_page(user):
                                weight_goal=new_weight_goal,
                                show_error_msg=show_error_msg,
                                error_msg=error_msg)
+    
+
+@app.route("/weights/<user>", methods=["GET", "POST"])
+def weights_page(user):
+    ses_token = request.cookies.get("session")
+    if not ses_token:
+        return redirect("/login")
+    if not db_access.check_session_token_validity(ses_token):
+        return redirect("/login")
+    if not ses_token.split("|")[0] == user:
+        return "You can't access other people's records. Go away >:("
+    return render_template("weights.html",
+                           username=user)
+    
 
 
 @app.route("/login", methods=['GET', 'POST'])

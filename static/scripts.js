@@ -291,6 +291,28 @@ function convertTableEpochs()
     })
 }
 
+function update_ts_on_weight_page()
+{
+    let ts_elem = $("#weighttimestamp");
+    let curr_epoch_s = Date.now() / 1000;
+    ts_elem.attr("ts", curr_epoch_s);
+    let old_text = ts_elem.text();
+    let new_text = old_text.substring(0, old_text.lastIndexOf('@') + 1);
+    let d = new Date(curr_epoch_s * 1000)
+    new_text = new_text + d.getDate().toString() + "." + d.getMonth().toString() + "." + d.getFullYear().toString() + " " + d.getHours().toString() + ":" + d.getMinutes().toString().padStart(2, '0') + ":" + d.getSeconds().toString().padStart(2, '0') + ":"
+    ts_elem.text(new_text)
+}
+
+function submitNewWeight()
+{
+    let ts = parseInt($("#weighttimestamp").attr("ts"));
+    let w = parseFloat($("#weightvalueinput").val());
+    if (!ts || !w)
+    {
+        $("#submiterror").show();
+    }
+}
+
 $( document ).ready(function() {
     if (location.href.includes("/foods/day"))
     {
@@ -304,6 +326,12 @@ $( document ).ready(function() {
         setRowNumbersToDeleteButtons("food_table_body")
         setRowNumbersToDeleteButtons("exercise_table_body")
         convertTableEpochs()
+    }
+
+    if (location.href.includes("/weights/"))
+    {
+        update_ts_on_weight_page()
+        setInterval(update_ts_on_weight_page, 1000)
     }
 
     if (location.href.endsWith("register"))
