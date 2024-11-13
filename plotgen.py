@@ -1,5 +1,6 @@
 import plotly.graph_objects as go
 from scipy.stats import linregress
+import math
 from datetime import datetime
 
 def generate_food_record_plot(entries: dict, target=0, show=False):
@@ -57,18 +58,18 @@ def generate_weight_plot(entries: dict, target=0.0, show=False):
     fig.add_trace(go.Scatter(x=x, y=y, mode='markers+lines', name="Weight"))
 
     slope, intercept, r_value, p_value, std_err = linregress(x_epochs, y)
-
-    target_reached_estimate_ts = int((target - intercept) / slope)
-    draw_estimate_plot = target_reached_estimate_ts > min(x_epochs) #we can only draw forecast if user is actually losing weight. TODO: if target is actually higher than start weight this should be the opposite
-    target_reached_estimate_ts_overhot = target_reached_estimate_ts + 60*60*24 #overshoot by one day to make plot look nicer
-    x_line = [datetime.fromtimestamp(min(x_epochs)),
-              datetime.fromtimestamp(target_reached_estimate_ts_overhot)]
-    y_line = [slope * min(x_epochs) + intercept, slope * target_reached_estimate_ts_overhot + intercept]
-    if draw_estimate_plot:
-        fig.add_trace(go.Scatter(x=x_line, y=y_line, mode='lines', name='Forecast'))
-        fig.add_trace(go.Scatter(x=[datetime.fromtimestamp(target_reached_estimate_ts)], y=[target], mode='markers', name='Target reached date'))
+    if not math.isnan(slope) and not math.isnan(intercept): #only generate these if there is valid values
+        target_reached_estimate_ts = int((target - intercept) / slope)
+        draw_estimate_plot = target_reached_estimate_ts > min(x_epochs) #we can only draw forecast if user is actually losing weight. TODO: if target is actually higher than start weight this should be the opposite
+        target_reached_estimate_ts_overhot = target_reached_estimate_ts + 60*60*24 #overshoot by one day to make plot look nicer
+        x_line = [datetime.fromtimestamp(min(x_epochs)),
+                  datetime.fromtimestamp(target_reached_estimate_ts_overhot)]
+        y_line = [slope * min(x_epochs) + intercept, slope * target_reached_estimate_ts_overhot + intercept]
+        if draw_estimate_plot:
+            fig.add_trace(go.Scatter(x=x_line, y=y_line, mode='lines', name='Forecast'))
+            fig.add_trace(go.Scatter(x=[datetime.fromtimestamp(target_reached_estimate_ts)], y=[target], mode='markers', name='Target reached date'))
+    
     fig.update_layout(margin=dict(l=20, r=20, t=20, b=20))
-
     if show:
         fig.show()
     else:
@@ -79,4 +80,5 @@ if __name__ == "__main__":
     #test_data = {'4.11.2024': {'food': [], 'exercise': []}, '5.11.2024': {'food': [], 'exercise': []}, '6.11.2024': {'food': [], 'exercise': []}, '7.11.2024': {'food': [], 'exercise': []}, '8.11.2024': {'food': [], 'exercise': []}, '9.11.2024': {'food': [{'datetime': 1731162944, 'food': 'perse', 'calories': 0.0, 'note': ''}, {'datetime': 1731162945, 'food': 'pillu', 'calories': 0.0, 'note': ''}, {'datetime': 1731187255, 'food': 'option2', 'calories': 223.2, 'note': 'from rec'}, {'datetime': 1731187840, 'food': 'omena', 'calories': 123.0, 'note': ''}, {'datetime': 1731188249, 'food': 'brusa', 'calories': 1234.0, 'note': ''}, {'datetime': 1731188254, 'food': 'omena', 'calories': 123.0, 'note': ''}], 'exercise': [{'datetime': 1731187433, 'calories': 123.0, 'desc': 'kävely'}]}, '10.11.2024': {'food': [], 'exercise': []}, '11.11.2024': {'food': [{'datetime': 1731350352, 'food': 'omena', 'calories': 123.0, 'note': ''}, {'datetime': 1731350355, 'food': 'brusa', 'calories': 1234.0, 'note': ''}, {'datetime': 1731350364, 'food': '3200', 'calories': 3222.0, 'note': ''}, {'datetime': 1731352997, 'food': 'omena', 'calories': 123.0, 'note': ''}], 'exercise': [{'datetime': 1731350369, 'calories': 1234.0, 'desc': '1234'}]}}
     #generate_food_record_plot(test_data, 1234, True)
     test_data = [{'datetime': 1731353511, 'weight': 56.0}, {'datetime': 1731439928, 'weight': 56.1}, {'datetime': 1731526363, 'weight': 55.5}]
+    #test_data = [{'datetime': 1731353511, 'weight': 56.0}]
     generate_weight_plot(test_data, 40, True)
