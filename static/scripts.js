@@ -289,6 +289,13 @@ function convertTableEpochs()
             $(this).text(epochToReadable($(this).text()))
         })
     })
+    $('#weight_table_body tr').each(function() {
+        $(this).find('td:first').each(function(){
+            console.debug("convertTableEpochs", $(this).text())
+            $(this).attr("epoch", $(this).text()) //store the original epoch string to attribute
+            $(this).text(epochToReadable($(this).text()))
+        })
+    })
 }
 
 function update_ts_on_weight_page()
@@ -310,7 +317,11 @@ function submitNewWeight()
     if (!ts || !w)
     {
         $("#submiterror").show();
+        return;
     }
+    data = {"ts": ts,
+            "weight": w}
+    postDataAndRedirect(window.location.href + "/post", data);
 }
 
 $( document ).ready(function() {
@@ -330,8 +341,9 @@ $( document ).ready(function() {
 
     if (location.href.includes("/weights/"))
     {
-        update_ts_on_weight_page()
-        setInterval(update_ts_on_weight_page, 1000)
+        update_ts_on_weight_page();
+        setInterval(update_ts_on_weight_page, 1000);
+        convertTableEpochs()
     }
 
     if (location.href.endsWith("register"))

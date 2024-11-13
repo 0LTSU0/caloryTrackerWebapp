@@ -282,3 +282,17 @@ class dbAccess():
                 self.db.commit()
         except Exception as e:
             print(e)
+
+    def add_weight_for_user(self, username, add_ts, add_weight):
+        try:
+            tablename = f"userdata_weights_{username}"
+            with self.thlock:
+                sql = f"INSERT INTO {tablename} (datetime, weight) VALUES (?, ?)"
+                self.cur.execute(sql, (add_ts, add_weight))
+                self.db.commit()
+            self.registered_users[username]["weight_records"].append({"datetime": add_ts, "weight": add_weight})
+        except Exception as e:
+            print(e)
+
+    def get_weight_records_for_user(self, user):
+        return self.registered_users[user]["weight_records"]

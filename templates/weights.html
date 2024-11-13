@@ -58,9 +58,27 @@
                 </div>
             </div>
             
-        
+            <div class="d-flex justify-content-center" style="margin-top: 30px;">
+                <table class="table table-striped" style="width: 70%;">
+                    <thead>
+                        <tr>
+                            <th scope="col">Time</th>
+                            <th scope="col">Weight</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weight_table_body">
+                        {% for w in weight_records %}
+                        <tr>
+                            <td>{{w['datetime']}}</td>
+                            <td>{{w['weight']}} kg</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
         
         </div>
-        <!--div id="plotlygraph" class="plotlygraphcontainer">{{plotlyhtml | safe}}</div-->
+        <div id="plotlygraph" class="plotlygraphcontainer">{{plot | safe}}</div>
     </div>
 </body>

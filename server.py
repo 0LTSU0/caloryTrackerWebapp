@@ -133,7 +133,7 @@ def profile_page(user):
                                error_msg=error_msg)
     
 
-@app.route("/weights/<user>", methods=["GET", "POST"])
+@app.route("/weights/<user>", methods=["GET"])
 def weights_page(user):
     ses_token = request.cookies.get("session")
     if not ses_token:
@@ -142,9 +142,36 @@ def weights_page(user):
         return redirect("/login")
     if not ses_token.split("|")[0] == user:
         return "You can't access other people's records. Go away >:("
+    weight_records = db_access.get_weight_records_for_user(user)
+    dailylimit, defaultburn, weightgoal = db_access.fill_settings_form(user)
+    plot = generate_weight_plot(weight_records, weightgoal)
     return render_template("weights.html",
-                           username=user)
+                           username=user,
+                           weight_records=weight_records,
+                           plot=plot)
+
+
+@app.route("/weights/<user>/post", methods=["POST"])
+def post_new_weight(user):
+    ses_token = request.cookies.get("session")
+    if not ses_token:
+        return redirect("/login")
+    if not db_access.check_session_token_validity(ses_token):
+        return redirect("/login")
+    if not ses_token.split("|")[0] == user:
+        return "You can't access other people's records. Go away >:("
     
+    try:
+        ts = int(request.get_json()["ts"])
+        weight = float(request.get_json()["weight"])
+        db_access.add_weight_for_user(user, ts, weight)
+        print("TODO save:", ts, weight)
+    except Exception as e:
+        print(e) #Todo show error on page or whatever
+        return redirect(redirect_addr)
+
+    redirect_addr = request.base_url.rstrip("/post")
+    return redirect(redirect_addr)
 
 
 @app.route("/login", methods=['GET', 'POST'])
