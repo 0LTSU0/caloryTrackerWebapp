@@ -7,6 +7,7 @@ def generate_food_record_plot(entries: dict, target=0, show=False):
     x_keys = list(entries.keys())
     y_total_eaten_minus_burned = []
     y_total_burned = []
+    avg_list = []
     for val in entries.values():
         cur_total_wo_burn = 0
         cur_total_burn = 0
@@ -17,6 +18,8 @@ def generate_food_record_plot(entries: dict, target=0, show=False):
             cur_total_wo_burn -= e["calories"]
         y_total_eaten_minus_burned.append(cur_total_wo_burn)
         y_total_burned.append(cur_total_burn)
+        if cur_total_wo_burn:
+            avg_list.append(cur_total_wo_burn)
 
     fig = go.Figure(data=[
         go.Bar(name='Eaten', x=x_keys, y=y_total_eaten_minus_burned, marker_color="red"),
@@ -40,12 +43,17 @@ def generate_food_record_plot(entries: dict, target=0, show=False):
     ))
 
     fig.update_layout(barmode='stack',
-                      margin=dict(l=20, r=20, t=20, b=20)
-                    )
+                      margin=dict(l=20, r=20, t=20, b=20))
+    
+    if avg_list: #cant calculate if 0 records
+        avg = round(sum(avg_list) / len(avg_list), 2)
+    else:
+        avg = 0
+
     if show:
         fig.show()
     else:
-        return fig.to_html(full_html=False)
+        return fig.to_html(full_html=False), avg
 
 
 def generate_weight_plot(entries: dict, target=0.0, show=False):

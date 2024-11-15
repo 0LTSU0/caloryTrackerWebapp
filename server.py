@@ -34,7 +34,7 @@ def foods_day(date):
         sum_eaten = round(sum([float(x['calories']) for x in daily_foods]), 2)
         sum_exercised = round(sum([float(x['calories']) for x in daily_exercises]), 2)
         if (sum_eaten - sum_exercised) < dailylimit:
-            text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you have {dailylimit+sum_exercised-sum_eaten}kcal remaining."
+            text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you have {round(dailylimit+sum_exercised-sum_eaten, 2)}kcal remaining."
             text_good = True
         else:
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {round(abs(dailylimit-sum_eaten+sum_exercised), 2)}kcal over."
@@ -46,7 +46,7 @@ def foods_day(date):
         plot_endt = epoch_for_date(date, True)
         plot_startt = epoch_for_date(get_datestring_at_offset(date, -7), False)
         plot_data = db_access.get_daily_entries_in_range(username, plot_startt, plot_endt)
-        plotly = generate_food_record_plot(plot_data, dailylimit)
+        plotly, avg = generate_food_record_plot(plot_data, dailylimit)
 
         return render_template("foods.html",
                                username=username,
@@ -56,7 +56,8 @@ def foods_day(date):
                                remainder_text=text,
                                remainder_text_positive=text_good,
                                foodrecms=recommendations,
-                               plotlyhtml=plotly)
+                               plotlyhtml=plotly,
+                               avg=avg)
     
 
 @app.route("/foods/day/<date>/post", methods=["POST"])
@@ -144,7 +145,9 @@ def weights_page(user):
         return "You can't access other people's records. Go away >:("
     weight_records = db_access.get_weight_records_for_user(user)
     dailylimit, defaultburn, weightgoal = db_access.fill_settings_form(user)
-    plot = generate_weight_plot(weight_records, weightgoal)
+    plot = ""
+    if len(weight_records) > 0:
+        plot = generate_weight_plot(weight_records, weightgoal)
     return render_template("weights.html",
                            username=user,
                            weight_records=weight_records,
