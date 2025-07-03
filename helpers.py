@@ -1,5 +1,10 @@
 import re
 import time
+import os
+import json
+import sys
+import base64
+import requests
 from datetime import datetime as dt
 from datetime import timedelta as td
 
@@ -82,3 +87,36 @@ def get_datestring_at_offset(date, offset):
     start_date = ddmmyyy_to_datetime(date)
     new_date = start_date + td(days=offset)
     return epoch_to_ddmmyyyy(new_date.timestamp())
+
+def get_pf_integration_info():
+    # get polar flow client id from environment or file
+    client_id = os.environ.get("pf_client_id")
+    client_secret = os.environ.get("pf_client_secret")
+    if client_id and client_secret:
+        return client_id, client_secret
+    try:
+        with open("pfoauth.json", "r") as f:
+            pfouathjson = json.load(f)
+            return pfouathjson["client_id"], pfouathjson["client_secret"] 
+    except:
+        print("Failed to get polar flow client id from env and file -> exiting")
+        sys.exit(1)
+
+def get_pf_access_token(code, id, secret):
+    # fetch polar flow access token using authentication key (https://www.polar.com/accesslink-api/?srsltid=AfmBOopLXX7JJ7BclEFUp2NQwykxiEgvIaiK0T-R-QiRO6nARfKAVZIo#token-endpoint)
+    auth = base64.urlsafe_b64encode(f"{id}:{secret}".encode("utf-8")).decode("utf-8").rstrip("=")
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+        'Authorization': f"Basic {auth}"
+    }
+    body = {
+        "grant_type": "authorization_code",
+        "code": code
+    }
+    r = requests.post('https://polarremote.com/v2/oauth2/token', data=body, headers=headers)
+    if r.status_code != 200:
+        return None, None
+    r_json = r.json()
+    print("Polar Flow token request returned:", r_json)
+    return r_json["access_token"], int(time.time() + int(r.json()["expires_in"]))

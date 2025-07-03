@@ -75,7 +75,31 @@
                     {% endif %}
                     <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Save</button><br>
                 </form>
+            </div>            
+            
+            <div class="col-12 text-center" style="margin-top: 50px;">
+                <br><br>
+                <h1 class="headertext">Third Party Connections</h1><br>
             </div>
+            <div class="col-12">
+                <div class="row">
+                        <div class="col-sm-10 text-end">
+                            <a href="/connectPolarFlow">
+                            <button type="button" class="btn btn-danger" style="width: 100%;">Connect Polar Flow</button>
+                            </a>
+                        </div>
+                    {% if pf_connected %}
+                    <div class="col-sm-2 text-center">
+                        <img src="/static/ok.png" alt="Not connected" height="37px">
+                    </div>
+                    {% else %}
+                    <div class="col-sm-2 text-center">
+                        <img src="/static/cross.png" alt="Not connected" height="37px">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        
         </div>
     </div>
 </body>

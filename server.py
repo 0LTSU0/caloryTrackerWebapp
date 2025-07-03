@@ -10,6 +10,11 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 db_access = None
 
+# PolarFlow integration
+PF_AUTH_URL = "https://flow.polar.com/oauth2/authorization"
+PF_CLIENT_ID = None
+PF_CLIENT_SECRET = None
+
 @app.route("/")
 def main():
     ses_token = request.cookies.get("session")
@@ -100,14 +105,15 @@ def profile_page(user):
     if not ses_token.split("|")[0] == user:
         return "You can't access other people's profile settings. Go away >:("
     if request.method == "GET":
-        daily_target, daily_burn, weight_goal = db_access.fill_settings_form(user)
+        daily_target, daily_burn, weight_goal, pf_connected = db_access.fill_settings_form(user)
         return render_template("profile.html",
                                username=user,
                                daily_target=daily_target,
                                daily_burn=daily_burn,
                                weight_goal=weight_goal,
                                show_error_msg=False,
-                               error_msg="")
+                               error_msg="",
+                               pf_connected=pf_connected)
     elif request.method == "POST":
         error_msg = ""
         new_daily_target = request.form.get("daily_calory_target_input")
@@ -227,7 +233,29 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
+
+@app.route("/pfoauth")
+def pfoauth():
+    code = request.args.get('code')
+    ses_token = request.cookies.get("session")
+    if not code or not ses_token or not db_access.check_session_token_validity(ses_token):
+        return "PolarFlow authorization failed"
+    username = ses_token.split("|")[0]
+    access_token, token_expiry = get_pf_access_token(code, PF_CLIENT_ID, PF_CLIENT_SECRET)
+    if not access_token or not token_expiry:
+        return "PolarFlow authorization failed"
+    db_access.update_pf_code_for_user(username, code, access_token, token_expiry)
+    return redirect(f"/profile/{username}")
+    
+
+@app.route("/connectPolarFlow")
+def connectPolarFlow():
+    auth_url = f"{PF_AUTH_URL}?response_type=code&client_id={PF_CLIENT_ID}"
+    return redirect(auth_url)
+
+
 if __name__ == "__main__":
+    PF_CLIENT_ID, PF_CLIENT_SECRET = get_pf_integration_info()
     db_access = dbAccess()
     db_access.init_database()
     app.run(host="0.0.0.0", port=5000, debug=False)

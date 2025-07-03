@@ -25,3 +25,10 @@ exersices:
 -datetime INTEGER <user supplied time for when this excersice was done>
 -calories REAL <how many calories was burnt doing this excersice>
 -desc TEXT <optional text description about excersice>
+
+thirdpartyconnections:
+-id user id from users table
+-username username from users table
+-pf_code polar flow auth code
+-pf_token polar flow token
+-pf_token_exp polar flow token expiry timestamp

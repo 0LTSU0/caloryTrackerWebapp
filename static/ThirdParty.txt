@@ -1,0 +1,2 @@
+cross.png: https://www.flaticon.com/free-icon/cancel_753345?term=no&page=1&position=1&origin=search&related_id=753345
+ok.png: https://www.flaticon.com/free-icon/check_12901779?term=yes&page=1&position=5&origin=search&related_id=12901779

@@ -26,11 +26,16 @@ def generate_login_token(username):
     return hash, exp
 
 
-#class foodAccess():
-#    def __init__(self, user):
-#        self.username = user
-#    
-#    def 
+class PolarFlowConnection():
+    def __init__(self):
+        self.auth_code = None # TODO: check if actually needed for anything? I guess it gets invalidated when token is generated
+        self.token = None
+        self.token_exp = None
+
+    def is_connected(self):
+        if not self.auth_code or not self.token or not self.token_exp:
+            return False
+        return time.time() < self.token_exp
 
 
 class dbAccess():
@@ -43,13 +48,14 @@ class dbAccess():
     def init_database(self): #if some table is missing from db, it is created and also current stuff contained inside db is loaded into memory
         self.db = sqlite3.connect("db.db", check_same_thread=False)
         self.cur = self.db.cursor()
+        
         self.init_tables()
         print("init_database(), loading userdata to memory")
         user_rows = self.cur.execute('SELECT * FROM users').fetchall()
         for row in user_rows:
             #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal, normaldailyburn
             username = row[1]
-            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": []}
+            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": [], "pf_integration": PolarFlowConnection()}
             print("Loaded user:", username, self.registered_users[username])
             for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, food, calories, note
@@ -67,6 +73,7 @@ class dbAccess():
                 entry = {"datetime": e_row[1], "calories": e_row[2], "desc": e_row[3]}
                 self.registered_users[username]["exercise_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
+        self.load_third_party_integration_table()
 
 
     #init general tables like users and in case someone is missing user data, create those tables also
@@ -87,6 +94,9 @@ class dbAccess():
                 user_table_name = f"userdata_exercises_{row[1]}"
                 if not (user_table_name,) in res:
                     self.init_user_data_table(user_table_name)
+        if not ("thirdpartyconnections",) in res:
+            print("No thirdparty service table in db, creating it")
+            self.init_thridparty_table()
                     
     #NOTE: only call this inside with thlock or in init steps
     def init_user_data_table(self, table_name):
@@ -101,6 +111,9 @@ class dbAccess():
             self.cur.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY AUTOINCREMENT, datetime INTEGER, calories REAL, desc TEXT)")
         else:
             print("Attempted to create unknown type of userdata table", table_name)
+
+    def init_thridparty_table(self):
+        self.cur.execute("CREATE TABLE thirdpartyconnections(id INTEGER, username TEXT, pf_code TEXT, pf_token TEXT, pf_token_exp INTEGER)")
 
     def check_login(self, username, pwd):
         #with self.thlock:
@@ -173,8 +186,8 @@ class dbAccess():
     def fill_settings_form(self, user):
         userdata = self.registered_users.get(user)
         if not userdata:
-            return 0, 0, 0
-        return userdata.get("dailycalorylimit"), userdata.get("defaultdailyburn"), userdata.get("weightgoal")
+            return 0, 0, 0, False
+        return userdata.get("dailycalorylimit"), userdata.get("defaultdailyburn"), userdata.get("weightgoal"), userdata.get("pf_integration").is_connected()
     
     def update_profile_settings(self, user, daily_calory, daily_burn, weight_goal):
         try:
@@ -296,3 +309,27 @@ class dbAccess():
 
     def get_weight_records_for_user(self, user):
         return self.registered_users[user]["weight_records"]
+    
+    def update_pf_code_for_user(self, username, code, access_token, access_token_expiry):
+        user_id = self.registered_users.get(username).get("id")
+        sql = f"INSERT INTO thirdpartyconnections (id, username, pf_code, pf_token, pf_token_exp) VALUES (?, ?, ?, ?, ?)"
+        with self.thlock:
+            self.cur.execute(sql, (user_id, username, code, access_token, access_token_expiry))
+            self.db.commit()
+        pf_int = self.registered_users.get(username).get("pf_integration")
+        pf_int.auth_code = code
+        pf_int.token = access_token
+        pf_int.token_exp = access_token_expiry
+
+    def load_third_party_integration_table(self):
+        for username, userdata in self.registered_users.items():
+            sql = 'SELECT * FROM thirdpartyconnections WHERE username = ?'
+            tp_integration_data = self.cur.execute(sql, (username,)).fetchall()
+            if not tp_integration_data:
+                continue
+            if len(tp_integration_data) > 1:
+                print(f"WARNING: THIRDPARTYCONNECTION TABLE CONTAINS MORE THAN ONE ENTRY FOR USER {username}")
+            pf_integration = userdata.get("pf_integration")
+            pf_integration.auth_code = tp_integration_data[0][2]
+            pf_integration.token = tp_integration_data[0][3]
+            pf_integration.token_exp = tp_integration_data[0][4]
