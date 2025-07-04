@@ -32,3 +32,4 @@ thirdpartyconnections:
 -pf_code polar flow auth code
 -pf_token polar flow token
 -pf_token_exp polar flow token expiry timestamp
+-pf_user_id polar user id needed for requests

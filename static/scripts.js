@@ -209,22 +209,6 @@ function postFoodsAndExercisesDay()
             }
             ctr++;
             
-            //old shit that no longer works with recommendation items
-            //if (cellElem.text()) //data in cells without user input boxes should be findable by this
-            //{
-            //    if (ctr == colWithTime)
-            //    {
-            //        dataEntry[dataKeys[ctr]] = cellElem.attr("epoch")
-            //    } else {
-            //        dataEntry[dataKeys[ctr]] = cellElem.text()
-            //    }
-            //} else if (cellElem.find('input').length > 0) {
-            //    let inputElem = cellElem.find('input');
-            //    dataEntry[dataKeys[ctr]] = inputElem.val()
-            //} else { //the cell must be empty
-            //    dataEntry[dataKeys[ctr]] = "";
-            //}
-            
         })
         data.push(dataEntry);
     });
@@ -322,6 +306,18 @@ function submitNewWeight()
     data = {"ts": ts,
             "weight": w}
     postDataAndRedirect(window.location.href + "/post", data);
+}
+
+function syncWithPolarFlow()
+{
+    let url = window.location.href;
+    let dateStr = url.substring(url.lastIndexOf("/") + 1);
+    let target_date = {
+        "day": dateStr.slice(0, 2),
+        "month": dateStr.slice(2, 4),
+        "year": dateStr.slice(4, 8)
+    }
+    postDataAndRedirect("/syncWithPolarFlow", target_date)
 }
 
 $( document ).ready(function() {

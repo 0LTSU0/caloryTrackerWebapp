@@ -35,7 +35,7 @@ def foods_day(date):
     if request.method == "GET":
         daily_foods = db_access.get_entries_day(username, date, "food_records")
         daily_exercises = db_access.get_entries_day(username, date, "exercise_records")
-        dailylimit, defaultburn, weightgoal = db_access.fill_settings_form(username)
+        dailylimit, defaultburn, weightgoal, pf_connected = db_access.fill_settings_form(username)
         sum_eaten = round(sum([float(x['calories']) for x in daily_foods]), 2)
         sum_exercised = round(sum([float(x['calories']) for x in daily_exercises]), 2)
         if (sum_eaten - sum_exercised) < dailylimit:
@@ -62,7 +62,8 @@ def foods_day(date):
                                remainder_text_positive=text_good,
                                foodrecms=recommendations,
                                plotlyhtml=plotly,
-                               avg=avg)
+                               avg=avg,
+                               pf_connected=pf_connected)
     
 
 @app.route("/foods/day/<date>/post", methods=["POST"])
@@ -150,7 +151,7 @@ def weights_page(user):
     if not ses_token.split("|")[0] == user:
         return "You can't access other people's records. Go away >:("
     weight_records = db_access.get_weight_records_for_user(user)
-    dailylimit, defaultburn, weightgoal = db_access.fill_settings_form(user)
+    dailylimit, defaultburn, weightgoal, pf_connected = db_access.fill_settings_form(user)
     plot = ""
     if len(weight_records) > 0:
         plot = generate_weight_plot(weight_records, weightgoal)
@@ -233,6 +234,18 @@ def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
                                'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
+@app.route('/syncWithPolarFlow', methods=["POST"])
+def syncWithPolarFlow():
+    ses_token = request.cookies.get("session")
+    if not ses_token:
+        return redirect("/login")
+    if not db_access.check_session_token_validity(ses_token):
+        return redirect("/login")
+    username = ses_token.split("|")[0]
+    #target_date = request.get_json()
+    new_ex_data = fetch_new_trainingdata_from_pf(db_access.registered_users.get(username))
+    db_access.add_exercises_for_user(username, new_ex_data)
+    return redirect("/foods/day")
 
 @app.route("/pfoauth")
 def pfoauth():
@@ -241,10 +254,11 @@ def pfoauth():
     if not code or not ses_token or not db_access.check_session_token_validity(ses_token):
         return "PolarFlow authorization failed"
     username = ses_token.split("|")[0]
-    access_token, token_expiry = get_pf_access_token(code, PF_CLIENT_ID, PF_CLIENT_SECRET)
-    if not access_token or not token_expiry:
+    access_token, token_expiry, user_id = get_pf_access_token(code, PF_CLIENT_ID, PF_CLIENT_SECRET)
+    if not access_token or not token_expiry or not user_id:
         return "PolarFlow authorization failed"
-    db_access.update_pf_code_for_user(username, code, access_token, token_expiry)
+    db_access.update_pf_code_for_user(username, code, access_token, token_expiry, user_id)
+    register_pf_user(username, access_token)
     return redirect(f"/profile/{username}")
     
 

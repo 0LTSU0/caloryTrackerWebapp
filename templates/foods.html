@@ -110,13 +110,22 @@
                 </tbody>
             </table>
             
-            <div class="col-4 d-flex justify-content-end" style="margin-top: 30px;">
+            {% if pf_connected %}
+            <div class="col-3 d-flex justify-content-end" style="margin-top: 30px;">
+                <button class="btn btn-primary" style="width: 90%;" onclick="syncWithPolarFlow()">Sync Polar Flow</button>
+            </div>
+            {% else %}
+            <div class="col-3 d-flex justify-content-end" style="margin-top: 30px;">
+                <button class="btn btn-primary" style="width: 90%;" disabled>Sync Polar Flow</button>
+            </div>
+            {% endif %}
+            <div class="col-3 d-flex justify-content-center" style="margin-top: 30px;">
                 <button class="btn btn-primary" style="width: 90%;" onclick="addNewRowToExerciseTable()">Add exercise</button>
             </div>
-            <div class="col-4 d-flex justify-content-center" style="margin-top: 30px;">
+            <div class="col-3 d-flex justify-content-center" style="margin-top: 30px;">
                 <button class="btn btn-primary" style="width: 90%;" onclick="addNewRowToFoodTable()">Add food</button>
             </div>
-            <div class="col-4 justify-content-start" style="margin-top: 30px;">
+            <div class="col-3 justify-content-start" style="margin-top: 30px;">
                 <button class="btn btn-success" style="width: 90%;" onclick="postFoodsAndExercisesDay()">Save changes</button>
             </div>
             

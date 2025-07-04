@@ -7,6 +7,7 @@ import base64
 import requests
 from datetime import datetime as dt
 from datetime import timedelta as td
+from datetime import timezone
 
 def is_integer(s): #from chatgpt :)
     return re.fullmatch(r"[+-]?\d+", s) is not None
@@ -119,4 +120,64 @@ def get_pf_access_token(code, id, secret):
         return None, None
     r_json = r.json()
     print("Polar Flow token request returned:", r_json)
-    return r_json["access_token"], int(time.time() + int(r.json()["expires_in"]))
+    return r_json["access_token"], int(time.time() + int(r.json()["expires_in"])), int(r_json.get("x_user_id"))
+
+
+def register_pf_user(username, access_token):
+    # register user with accesslink https://www.polar.com/accesslink-api/?python#register-user
+    body = {
+        "member-id": f"pf_{username}"
+    }
+    headers = {
+        'Content-Type': 'application/json',  'Accept': 'application/json',  'Authorization': f'Bearer {access_token}'
+    }
+    r = requests.post('https://www.polaraccesslink.com/v3/users', headers = headers, json=body)
+    if r.status_code >= 200 and r.status_code < 400:
+        print("User registration with polar access link ok:", r.json())
+    elif r.status_code == 409:
+        print("User already registered with polar access link")
+    else:
+        print("User registration with polar access link failed")
+
+
+def fetch_new_trainingdata_from_pf(userdata):
+    # Note to self: Polar flow only gives you exercise data that you have not fetched yet when using exercise-transactions
+    if not userdata.get("pf_integration").is_connected():
+        return None
+    pf_token = userdata.get("pf_integration").token
+    pf_uid = userdata.get("pf_integration").pf_user_id
+
+    #create transaction
+    h = {'Accept': 'application/json',  'Authorization': f'Bearer {pf_token}'}
+    r = requests.post(f'https://www.polaraccesslink.com/v3/users/{pf_uid}/exercise-transactions', headers=h)
+    if r.status_code >= 400 or r.status_code == 204: # 204 = no new content avaible
+        return None
+    r_json = r.json()
+    transaction_id = r_json["transaction-id"]
+
+    #get list of exercises
+    r = requests.get(f'https://www.polaraccesslink.com/v3/users/{pf_uid}/exercise-transactions/{transaction_id}', headers=h)
+    if r.status_code >= 400:
+        return None
+    r_json = r.json()
+
+    #get data of all available exercises
+    ex_data = []
+    for exercise_link in r_json["exercises"]:
+        data = requests.get(exercise_link, headers=h)
+        d_json = data.json()
+        print(f"got new exercise for user {userdata.get("id")} from polar flow:", d_json)
+        start_time = dt.strptime(d_json["start-time"], "%Y-%m-%dT%H:%M:%S")
+        start_time = start_time.replace(tzinfo=timezone.utc)
+        epoch_ts = int(start_time.timestamp() + (int(d_json["start-time-utc-offset"]) * 60))
+        ex_data.append({
+            "datetime": epoch_ts,
+            "calories": d_json["calories"],
+            "desc": f"PF: {d_json["sport"]}"
+        })
+
+    #close transaction
+    h = {'Authorization': f'Bearer {pf_token}'}
+    r = requests.put(f'https://www.polaraccesslink.com/v3/users/{pf_uid}/exercise-transactions/{transaction_id}', headers=h)
+
+    return ex_data
