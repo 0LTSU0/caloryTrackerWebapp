@@ -1,4 +1,5 @@
 import os
+import gpxpy
 from flask import Flask
 from flask import redirect, render_template, url_for, request, jsonify, send_from_directory, make_response
 
@@ -270,6 +271,26 @@ def pfoauth():
 def connectPolarFlow():
     auth_url = f"{PF_AUTH_URL}?response_type=code&client_id={PF_CLIENT_ID}"
     return redirect(auth_url)
+
+
+@app.route("/viewExerciseDetailsPF/pf_data/<user>/<eid>", methods=["GET"])
+def viewExerciseDetails(user, eid):
+    ses_token = request.cookies.get("session")
+    if not ses_token:
+        return redirect("/login")
+    if not db_access.check_session_token_validity(ses_token):
+        return redirect("/login")
+    sesuser = ses_token.split("|")[0]
+    if user != sesuser:
+        return "You cannot view exercises of other people, go away >:("
+    gpx_dir = f"pf_data/{user}/{eid}"
+    if not os.path.exists(gpx_dir):
+        return "Extra details for this exercise do not exist. If you got here by clicking a button in exercise list then there must be a bug somewhere 🤔"
+    
+    with open(gpx_dir + "/route.gpx", "r") as f:
+        gpx_data = gpxpy.parse(f)
+
+    return "TODO"
 
 
 if __name__ == "__main__":
