@@ -14,8 +14,8 @@ def generate_food_record_plot(entries: dict, target=0, show=False):
         for f in val["food"]:
             cur_total_wo_burn += f["calories"]
         for e in val["exercise"]:
-            cur_total_burn += e["calories"]
-            cur_total_wo_burn -= e["calories"]
+            cur_total_burn += e.calories
+            cur_total_wo_burn -= e.calories
         y_total_eaten_minus_burned.append(cur_total_wo_burn)
         y_total_burned.append(cur_total_burn)
         if cur_total_wo_burn:

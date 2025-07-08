@@ -104,7 +104,12 @@
                         <td>{{e['datetime']}}</td>
                         <td>{{e['calories']}}</td>
                         <td>{{e['desc']}}</td>
-                        <td><button class="btn btn-danger btn-sm" onclick="removeRowFromTable(this)">Delete</button></td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" onclick="removeRowFromTable(this)">Delete</button>
+                            {% if e['extra_data_available'] %}
+                                <button class="btn btn-primary btn-sm" onclick="">Details</button>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

@@ -9,6 +9,19 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 from datetime import timezone
 
+class exerciseRecord():
+    def __init__(self, timestamp, calories, desc, gpx_path="", extra_data_avaibale=False, pf_id=None):
+        #ntry = {"datetime": e_row[1], "calories": e_row[2], "desc": e_row[3], "gpx_path": extra_data_path, "extra_data_available": extra_data_available}
+        self.datetime = timestamp
+        self.calories = calories
+        self.desc = desc
+        self.gpx_path = gpx_path
+        self.extra_data_available = extra_data_avaibale
+        self.pf_id = pf_id #this is only used when syncing with polar flow
+
+    def __eq__(self, other):
+        return self.datetime == other.datetime and self.calories == other.calories and self.desc == other.desc
+
 def is_integer(s): #from chatgpt :)
     return re.fullmatch(r"[+-]?\d+", s) is not None
 
@@ -21,6 +34,15 @@ def epoch_to_ddmmyyyy(epoch_time):
 def ddmmyyy_to_datetime(timestring):
     return dt.strptime(timestring, "%d%m%Y")
 
+def compare_e_items(_1, _2):
+    return _1["datetime"] == _2["datetime"] and _1["calories"] == _2["calories"] and _1["desc"] == _2["desc"]
+
+def e_data_json_to_obj(ds):
+    res = []
+    for d in ds:
+        res.append(exerciseRecord(d["datetime"], d["calories"], d["desc"]))
+    return res
+
 def get_what_needs_update_day(old_data, new_data):
     pass
     #if some old record is no longer in new_data, it must be requested to be deleted
@@ -29,7 +51,8 @@ def get_what_needs_update_day(old_data, new_data):
     for old_d in old_data:
         shall_be_deleted = True
         for new_d in new_data:
-            if new_d == old_d: #if some new d is old then no delete
+            
+            if old_d == new_d: #if some new d is old then no delete
                 shall_be_deleted = False
                 break
         if shall_be_deleted:
@@ -163,18 +186,23 @@ def fetch_new_trainingdata_from_pf(userdata):
 
     #get data of all available exercises
     ex_data = []
+    h_gpx = {'Accept': 'application/gpx+xml',  'Authorization': f'Bearer {pf_token}'}
     for exercise_link in r_json["exercises"]:
         data = requests.get(exercise_link, headers=h)
         d_json = data.json()
         print(f"got new exercise for user {userdata.get("id")} from polar flow:", d_json)
         start_time = dt.strptime(d_json["start-time"], "%Y-%m-%dT%H:%M:%S")
-        start_time = start_time.replace(tzinfo=timezone.utc)
-        epoch_ts = int(start_time.timestamp() + (int(d_json["start-time-utc-offset"]) * 60))
-        ex_data.append({
-            "datetime": epoch_ts,
-            "calories": d_json["calories"],
-            "desc": f"PF: {d_json["sport"]}"
-        })
+        #start_time = start_time.replace(tzinfo=timezone.utc)
+        #epoch_ts = int(start_time.timestamp() + (int(d_json["start-time-utc-offset"]) * 60))
+        epoch_ts = start_time.timestamp()
+        ex_data.append(exerciseRecord(epoch_ts, d_json["calories"], f"PF: {d_json["sport"]}", pf_id=d_json["id"]))
+        if d_json["has-route"]:
+            # if route data is available, get gpx
+            r_gpx = requests.get(exercise_link + "/gpx", headers=h_gpx)
+            gpx_dir = f"pf_data_{d_json["id"]}"
+            os.mkdir(gpx_dir)
+            with open(gpx_dir + "/route.gpx", "w") as f:
+                f.write(r_gpx.text)
 
     #close transaction
     h = {'Authorization': f'Bearer {pf_token}'}

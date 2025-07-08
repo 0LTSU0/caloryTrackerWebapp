@@ -3,6 +3,7 @@ import hashlib
 import threading
 import time
 import datetime
+import shutil
 
 from helpers import *
 
@@ -39,6 +40,9 @@ class PolarFlowConnection():
         return time.time() < self.token_exp
 
 
+
+
+
 class dbAccess():
     def __init__(self):
         self.db = None
@@ -58,7 +62,7 @@ class dbAccess():
         for row in user_rows:
             #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal, normaldailyburn
             username = row[1]
-            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": [], "pf_integration": PolarFlowConnection(), "pf_training_data": {}}
+            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": [], "pf_integration": PolarFlowConnection()}
             print("Loaded user:", username, self.registered_users[username])
             for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, food, calories, note
@@ -73,7 +77,9 @@ class dbAccess():
                 print("Loaded entry", entry, "for user", username)
             for e_row in self.cur.execute(f'SELECT * FROM userdata_exercises_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, calories, desc
-                entry = {"datetime": e_row[1], "calories": e_row[2], "desc": e_row[3]}
+                extra_data_path = f"pf_data/{username}/{e_row[0]}"
+                extra_data_available = os.path.exists(extra_data_path)
+                entry = exerciseRecord(e_row[1], e_row[2], e_row[3], extra_data_path, extra_data_available)
                 self.registered_users[username]["exercise_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
         self.load_third_party_integration_table()
@@ -157,7 +163,7 @@ class dbAccess():
                 self.init_user_data_table(f"userdata_foods_{username}")
                 self.init_user_data_table(f"userdata_weights_{username}")
                 self.init_user_data_table(f"userdata_exercises_{username}")
-            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID, "dailycalorylimit": DEFAULT_CALORY_TARGET, "weightgoal": DEFAULT_WEIGHT_GOAL, "defaultdailyburn": DEFAULT_CALORY_TARGET, "food_records": [], "weight_records": [], "exercise_records": []} #TODO: if user id is used for something it needs to be set to correct value
+            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID, "dailycalorylimit": DEFAULT_CALORY_TARGET, "weightgoal": DEFAULT_WEIGHT_GOAL, "defaultdailyburn": DEFAULT_CALORY_TARGET, "food_records": [], "weight_records": [], "exercise_records": [], "pf_integration": PolarFlowConnection()} #TODO: if user id is used for something it needs to be set to correct value
             return True, token
         except Exception as e:
             print("Exception in create_new_account()", e)
@@ -215,8 +221,12 @@ class dbAccess():
         end_epoch = curr_date.timestamp()
         res = []
         for frecord in self.registered_users[user][search]:
-            if frecord["datetime"] >= start_epoch and frecord["datetime"] < end_epoch:
-                res.append(frecord)
+            if search == "exercise_records":
+                if frecord.datetime >= start_epoch and frecord.datetime < end_epoch:
+                    res.append(frecord)
+            else:
+                if frecord["datetime"] >= start_epoch and frecord["datetime"] < end_epoch:
+                    res.append(frecord)
         return res
     
     def get_daily_entries_in_range(self, user, st, et): #TODO: imporove this whole graph generation logic, it currently translates timestamps to strings back many times for no reason
@@ -274,12 +284,28 @@ class dbAccess():
             tablename = f"userdata_exercises_{user}"
             with self.thlock:
                 for entry in add_exercises:
-                    datetime = entry["datetime"]
-                    calories = entry['calories']
-                    desc = entry['desc']
+                    datetime = entry.datetime
+                    calories = entry.calories
+                    desc = entry.desc
                     sql = f"INSERT INTO {tablename} (datetime, calories, desc) VALUES (?, ?, ?)"
-                    self.registered_users[user]["exercise_records"].append({"datetime": datetime, "calories": calories, "desc": desc})
                     self.cur.execute(sql, (datetime, calories, desc))
+                    new_item_id = self.cur.lastrowid
+                    extra_data_available = False
+                    if entry.pf_id: #this is available when were adding exercises from polar flow sync
+                        src_path = f"pf_data_{entry.pf_id}"
+                        target_path = f"pf_data/{user}"
+                        target_path_with_id = f"pf_data/{user}/{new_item_id}"
+                        if os.path.isdir(src_path):
+                            if not os.path.isdir("pf_data"):
+                                os.mkdir("pf_data")
+                            if not os.path.isdir(target_path):
+                                os.mkdir(target_path)
+                            os.mkdir(target_path_with_id)
+                            os.rename(src_path+"/route.gpx", target_path_with_id+"/route.gpx")
+                            shutil.rmtree(src_path)
+                            extra_data_available = True
+                    entry = exerciseRecord(datetime, calories, desc, f"pf_data/{user}/{new_item_id}", extra_data_available)
+                    self.registered_users[user]["exercise_records"].append(entry)
                 self.db.commit()
         except Exception as e:
             print(e)
@@ -289,11 +315,16 @@ class dbAccess():
             tablename = f"userdata_exercises_{user}"
             with self.thlock:
                 for entry in delete_exercises:
-                    datetime = entry["datetime"]
-                    calories = entry['calories']
-                    desc = entry['desc']
+                    datetime = entry.datetime
+                    calories = entry.calories
+                    desc = entry.desc
+                    items_to_remove = []
+                    for item in self.registered_users[user]["exercise_records"]:
+                        if item == exerciseRecord(datetime, calories, desc, None, None):
+                            items_to_remove.append(item)
+                    for item in items_to_remove:
+                        self.registered_users[user]["exercise_records"].remove(item)
                     sql = f'DELETE FROM {tablename} WHERE datetime = ? AND calories = ? AND desc = ?'
-                    self.registered_users[user]["exercise_records"].remove({"datetime": datetime, "calories": calories, "desc": desc})
                     self.cur.execute(sql, (datetime, calories, desc))
                 self.db.commit()
         except Exception as e:

@@ -37,7 +37,7 @@ def foods_day(date):
         daily_exercises = db_access.get_entries_day(username, date, "exercise_records")
         dailylimit, defaultburn, weightgoal, pf_connected = db_access.fill_settings_form(username)
         sum_eaten = round(sum([float(x['calories']) for x in daily_foods]), 2)
-        sum_exercised = round(sum([float(x['calories']) for x in daily_exercises]), 2)
+        sum_exercised = round(sum([float(x.calories) for x in daily_exercises]), 2)
         if (sum_eaten - sum_exercised) < dailylimit:
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you have {round(dailylimit+sum_exercised-sum_eaten, 2)}kcal remaining."
             text_good = True
@@ -79,6 +79,7 @@ def add_new_foods_day(date): #NOTE: this also handles exercises since they are o
     fdata = numerize_food_vals_in_new_data(fdata)
     edata = request.get_json()["exercises"]
     edata = numerize_food_vals_in_new_data(edata)
+    edata = e_data_json_to_obj(edata)
     current_fitems_on_day = db_access.get_entries_day(username, date, "food_records")
     current_eitems_on_day = db_access.get_entries_day(username, date, "exercise_records")
     fitems_to_delete, fitems_to_add = get_what_needs_update_day(current_fitems_on_day, fdata)
@@ -244,6 +245,9 @@ def syncWithPolarFlow():
     username = ses_token.split("|")[0]
     #target_date = request.get_json()
     new_ex_data = fetch_new_trainingdata_from_pf(db_access.registered_users.get(username))
+    #new_ex_data = [ #TEMPTESTTEMPTESTTEMPTEST
+    #    exerciseRecord(1751990040, 420, "PF: testdummydataWITHPOBJ", pf_id=54321)
+    #]
     db_access.add_exercises_for_user(username, new_ex_data)
     return redirect("/foods/day")
 

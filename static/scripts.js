@@ -149,7 +149,7 @@ function setRowNumbersToDeleteButtons(tablebody)
     $(`#${tablebody} > tr > td`).each(function() {
         for (let child of this.childNodes)
         {
-            if (child.tagName == "BUTTON")
+            if (child.tagName == "BUTTON" && child.textContent == "Delete")
             {
                 child.setAttribute("row_identifier", ctr);
                 ctr = ctr + 1;
