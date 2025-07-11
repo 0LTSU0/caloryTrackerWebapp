@@ -85,3 +85,8 @@
   height: 30px !important;
   width: 90% !important;
 }
+
+#map {
+  height: 700px;
+  margin-top: 20px;
+}

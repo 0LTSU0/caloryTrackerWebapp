@@ -290,7 +290,31 @@ def viewExerciseDetails(user, eid):
     with open(gpx_dir + "/route.gpx", "r") as f:
         gpx_data = gpxpy.parse(f)
 
-    return "TODO"
+    #NOTE: This might need adjusting if sources other than Polar Flow is supported for gpx. GPX files from polar flow seem to always have one track
+    points = []
+    for track in gpx_data.tracks:
+        for segment in track.segments:
+            for point in segment.points:
+                points.append({
+                    "lat": point.latitude,
+                    "lon": point.longitude,
+                    "alt": point.elevation,
+                    "first": False,
+                    "last": False
+                })
+    points[0]["first"] = True
+    points[-1]["last"] = True
+
+    sport_name = "Unknown sport"
+    for exr in db_access.registered_users[user]["exercise_records"]:
+        if exr.gpx_path.split("/")[-1] == eid:
+            sport_name = exr.desc.lstrip("PF: ")
+            break
+
+    return render_template("exercise_view.html",
+                           username=user,
+                           coords=points,
+                           sport=sport_name)
 
 
 if __name__ == "__main__":

@@ -389,4 +389,45 @@ $( document ).ready(function() {
             }
         }); 
     }
+
+    if (location.href.includes("viewExerciseDetails"))
+    {
+        const map = L.map('map').setView([coordinates[0].lat, coordinates[0].lon], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+        const greenIcon = new L.Icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+        const redIcon = new L.Icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        });
+
+        var latlons = [];
+        coordinates.forEach(coord => {
+            latlons.push([coord.lat, coord.lon])
+            if (coord.first) {
+                L.marker([coord.lat, coord.lon], {icon: greenIcon}).bindPopup("Start").addTo(map);
+            } else if (coord.last) {
+                L.marker([coord.lat, coord.lon], {icon: redIcon}).bindPopup("End").addTo(map);
+            }
+        })
+        const polyline = L.polyline(latlons, {color: 'red'}).addTo(map);
+        map.fitBounds(polyline.getBounds());
+
+        var mDistanse = 0, length = polyline._latlngs.length;
+        for (var i = 1; i < length; i++) {
+            mDistanse += polyline._latlngs[i].distanceTo(polyline._latlngs[i - 1]);
+        }
+        console.log(mDistanse)
+        $("#length").text((mDistanse / 1000).toFixed(2))
+    }
 });

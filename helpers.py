@@ -195,7 +195,7 @@ def fetch_new_trainingdata_from_pf(userdata):
         #start_time = start_time.replace(tzinfo=timezone.utc)
         #epoch_ts = int(start_time.timestamp() + (int(d_json["start-time-utc-offset"]) * 60))
         epoch_ts = start_time.timestamp()
-        ex_data.append(exerciseRecord(epoch_ts, d_json["calories"], f"PF: {d_json["sport"]}", pf_id=d_json["id"]))
+        ex_data.append(exerciseRecord(epoch_ts, d_json["calories"], f"PF: {d_json["detailed-sport-info"]}", pf_id=d_json["id"]))
         if d_json["has-route"]:
             # if route data is available, get gpx
             r_gpx = requests.get(exercise_link + "/gpx", headers=h_gpx)

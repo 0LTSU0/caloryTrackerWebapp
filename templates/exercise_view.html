@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<link rel="stylesheet" type="text/css" href="/static/style.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<script
+	src="https://code.jquery.com/jquery-3.7.1.min.js"
+	integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+	crossorigin="anonymous">
+</script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand padleft30">CaloryTrackerWebapp</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarText">
+        <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="">Food</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/weights/{{username}}">Weight</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/profile/{{username}}">Profile</a>
+            </li>
+        </ul>
+        <!-- Apply ml-auto to push the text to the right -->
+        <ul class="navbar-nav ms-auto">
+            <li class="nav-item active padright30">
+                <a class="nav-link" href="/logout">Logged in as {{username}} (logout)</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<body>
+    <script>0</script> <!--workaround for unstyled flash in firefox https://stackoverflow.com/a/57888310-->
+    <div class="container d-flex flex-column justify-content-center align-items-center" style="margin-top: 20px;">        
+        <div class="row w-100" style="max-width: 850px;">
+            <div style="text-align: center;">
+                <b id="length"></b><a>km {{sport}} from datetime</a>
+            </div><br><br>
+            
+            
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script>
+        const coordinates = {{ coords|tojson }};
+    </script>
+</body>
+
+<script src="/static/scripts.js"></script>
