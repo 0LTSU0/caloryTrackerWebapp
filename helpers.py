@@ -187,6 +187,7 @@ def fetch_new_trainingdata_from_pf(userdata):
     #get data of all available exercises
     ex_data = []
     h_gpx = {'Accept': 'application/gpx+xml',  'Authorization': f'Bearer {pf_token}'}
+    h_fit = {'Accept': '*/*',  'Authorization': f'Bearer {pf_token}'}
     for exercise_link in r_json["exercises"]:
         data = requests.get(exercise_link, headers=h)
         d_json = data.json()
@@ -196,13 +197,18 @@ def fetch_new_trainingdata_from_pf(userdata):
         #epoch_ts = int(start_time.timestamp() + (int(d_json["start-time-utc-offset"]) * 60))
         epoch_ts = start_time.timestamp()
         ex_data.append(exerciseRecord(epoch_ts, d_json["calories"], f"PF: {d_json["detailed-sport-info"]}", pf_id=d_json["id"]))
+        gpx_dir = f"pf_data_{d_json["id"]}"
+        os.mkdir(gpx_dir)
         if d_json["has-route"]:
-            # if route data is available, get gpx
+            # if route data is available, get gpx (though .fit seems to be way better format and we can do everything with it, download these for now just in case)
             r_gpx = requests.get(exercise_link + "/gpx", headers=h_gpx)
-            gpx_dir = f"pf_data_{d_json["id"]}"
-            os.mkdir(gpx_dir)
             with open(gpx_dir + "/route.gpx", "w") as f:
                 f.write(r_gpx.text)
+        
+        #always get the fit file
+        r_fit = requests.get(exercise_link + "/fit", headers=h_fit)        
+        with open(gpx_dir + "/data.fit", "wb") as f:
+            f.write(r_fit.content)
 
     #close transaction
     h = {'Authorization': f'Bearer {pf_token}'}

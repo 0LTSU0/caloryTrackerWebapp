@@ -301,7 +301,11 @@ class dbAccess():
                             if not os.path.isdir(target_path):
                                 os.mkdir(target_path)
                             os.mkdir(target_path_with_id)
-                            os.rename(src_path+"/route.gpx", target_path_with_id+"/route.gpx")
+                            try:
+                                os.rename(src_path+"/route.gpx", target_path_with_id+"/route.gpx")
+                            except:
+                                pass # gpx only exists if excercise has route
+                            os.rename(src_path+"/data.fit", target_path_with_id+"/data.fit")
                             shutil.rmtree(src_path)
                             extra_data_available = True
                     entry = exerciseRecord(datetime, calories, desc, f"pf_data/{user}/{new_item_id}", extra_data_available)

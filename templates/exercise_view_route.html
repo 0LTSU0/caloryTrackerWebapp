@@ -10,6 +10,7 @@
 </script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand padleft30">CaloryTrackerWebapp</a>
@@ -20,7 +21,7 @@
     <div class="collapse navbar-collapse" id="navbarText">
         <ul class="navbar-nav me-auto">
             <li class="nav-item">
-                <a class="nav-link" href="">Food</a>
+                <a class="nav-link" href="/foods/day">Food</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="/weights/{{username}}">Weight</a>
@@ -43,11 +44,12 @@
     <div class="container d-flex flex-column justify-content-center align-items-center" style="margin-top: 20px;">        
         <div class="row w-100" style="max-width: 850px;">
             <div style="text-align: center;">
-                <b id="length"></b><a>km {{sport}} from datetime</a>
+                <b id="length"></b><a>km {{sport}} from </a><a id="exerciseTS">datetime</a>
             </div><br><br>
             
             
             <div id="map"></div>
+            <canvas id="altcanvas" onmouseout="altGraphMouseOut(this)" height="250"></canvas>
         </div>
     </div>
 

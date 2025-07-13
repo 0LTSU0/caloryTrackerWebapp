@@ -320,6 +320,156 @@ function syncWithPolarFlow()
     postDataAndRedirect("/syncWithPolarFlow", target_date)
 }
 
+function setDateInfo(ts) {
+    let tsString = ts.substring(0, 10) + " " + ts.substring(11, 16);
+    $("#exerciseTS").text(tsString);
+}
+
+var hoverMarker;
+function drawExerciseMap()
+{
+    const map = L.map('map')
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+    const greenIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    const redIcon = new L.Icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    });
+    
+    var latlons = [];
+    var tss = [];
+    var valid_coord_objs = [];
+    for(const [ts, coord] of Object.entries(coordinates)) {
+        if (coord.lat && coord.lon) {
+            latlons.push([coord.lat, coord.lon]);
+            tss.push(ts);
+            valid_coord_objs.push(coord)
+            if (coord.first) {
+                setDateInfo(ts); // header of the first valid coordinate should be decent timestamp for the exercise
+                L.marker([coord.lat, coord.lon], {icon: greenIcon}).bindPopup("Start").addTo(map);
+                hoverMarker = L.circleMarker([coord.lat, coord.lon], {radius: 7});
+                hoverMarker.addTo(map);
+                hoverMarker.setStyle({ opacity: 0 });
+            } else if (coord.last) {
+                L.marker([coord.lat, coord.lon], {icon: redIcon}).bindPopup("End").addTo(map);
+                $("#length").text((coord.distance / 1000).toFixed(2)) // using distance from last record should be ok
+            }
+        }
+    }
+    
+    const polyline = L.polyline(latlons, {color: 'red'}).addTo(map);
+    map.fitBounds(polyline.getBounds());
+
+    return [tss, valid_coord_objs]
+}
+
+function drawAltitudeGraph(labels, valid_coords)
+{
+    let alts = valid_coords.map(p => p.alt);
+    let speeds = valid_coords.map(p => p.speed * 3,6); //convert to kmh instead of m/s
+    let ctx = document.getElementById('altcanvas').getContext('2d');
+
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Altitude (m)',
+          data: alts,
+          yAxisID: 'y',
+          borderColor: 'green',
+          fill: false,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        },
+        {
+          label: 'Speed (km/h)',
+          data: speeds,
+          borderColor: 'blue',
+          yAxisID: 'y1',
+          fill: false,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false,
+        },
+        plugins: {
+          tooltip: {
+            enabled: true,
+            mode: 'nearest',
+            intersect: false,
+            callbacks: { // only show altitude value in popup
+              title: () => null
+            }
+          }
+        },
+        scales: {
+        y: {
+              type: 'linear',
+              position: 'left',
+              title: {
+                display: true,
+                text: 'Altitude (m)'
+              }
+            },
+            y1: {
+              type: 'linear',
+              position: 'right',
+              grid: {
+                drawOnChartArea: false // if true then gridlines are a mess
+              },
+              title: {
+                display: true,
+                text: 'Speed (km/h)'
+              }
+            }
+        },
+        onHover: (event, chartElements, chart) => {
+          if (chartElements.length > 0) {
+            const index = chart.data.labels[chartElements[0].index];
+            console.log("hovering over ", index)
+            hoverMarker.setLatLng([coordinates[index].lat, coordinates[index].lon]);
+            hoverMarker.setStyle({ opacity: 1 });
+            
+            hmPopupText = "Time: " + index + "<br>" +
+                "Distance: " + coordinates[index].distance + "km<br>" +
+                "Speed: " + (coordinates[index].speed * 3.6).toFixed(2) + "km/h<br>" +
+                "Heart rate: " + coordinates[index].heartrate + "bpm"
+
+            hoverMarker.bindPopup(hmPopupText);
+            hoverMarker.openPopup();
+          } else {
+            hoverMarker.setStyle({ opacity: 0 });
+          }
+        }
+      }
+    });
+}
+
+function altGraphMouseOut(x) {
+    console.log("stop hovering over alt graph")
+    hoverMarker.setStyle({opacity: 0})
+    hoverMarker.closePopup();
+}
+
 $( document ).ready(function() {
     if (location.href.includes("/foods/day"))
     {
@@ -392,42 +542,7 @@ $( document ).ready(function() {
 
     if (location.href.includes("viewExerciseDetails"))
     {
-        const map = L.map('map').setView([coordinates[0].lat, coordinates[0].lon], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
-        const greenIcon = new L.Icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        });
-        const redIcon = new L.Icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        });
-
-        var latlons = [];
-        coordinates.forEach(coord => {
-            latlons.push([coord.lat, coord.lon])
-            if (coord.first) {
-                L.marker([coord.lat, coord.lon], {icon: greenIcon}).bindPopup("Start").addTo(map);
-            } else if (coord.last) {
-                L.marker([coord.lat, coord.lon], {icon: redIcon}).bindPopup("End").addTo(map);
-            }
-        })
-        const polyline = L.polyline(latlons, {color: 'red'}).addTo(map);
-        map.fitBounds(polyline.getBounds());
-
-        var mDistanse = 0, length = polyline._latlngs.length;
-        for (var i = 1; i < length; i++) {
-            mDistanse += polyline._latlngs[i].distanceTo(polyline._latlngs[i - 1]);
-        }
-        console.log(mDistanse)
-        $("#length").text((mDistanse / 1000).toFixed(2))
+        const [tss, valid_coord_objs] = drawExerciseMap();
+        drawAltitudeGraph(tss, valid_coord_objs);
     }
 });

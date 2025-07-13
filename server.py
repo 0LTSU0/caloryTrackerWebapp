@@ -1,5 +1,5 @@
 import os
-import gpxpy
+import fitparse
 from flask import Flask
 from flask import redirect, render_template, url_for, request, jsonify, send_from_directory, make_response
 
@@ -287,23 +287,32 @@ def viewExerciseDetails(user, eid):
     if not os.path.exists(gpx_dir):
         return "Extra details for this exercise do not exist. If you got here by clicking a button in exercise list then there must be a bug somewhere 🤔"
     
-    with open(gpx_dir + "/route.gpx", "r") as f:
-        gpx_data = gpxpy.parse(f)
+    route_available = "route.gpx" in os.listdir(gpx_dir)
+    if not route_available:
+        return "Support for showing exercises without route information TODO"
 
-    #NOTE: This might need adjusting if sources other than Polar Flow is supported for gpx. GPX files from polar flow seem to always have one track
-    points = []
-    for track in gpx_data.tracks:
-        for segment in track.segments:
-            for point in segment.points:
-                points.append({
-                    "lat": point.latitude,
-                    "lon": point.longitude,
-                    "alt": point.elevation,
+    fitfile = fitparse.FitFile("testdir/data.fit")
+    points = {}
+    first_valid_ts = None
+    for record in fitfile.get_messages("record"):
+        ts = record.get_value("timestamp").isoformat()
+        points[ts] = {"alt": record.get_value("altitude"),
+                    "lat": record.get_value("position_lat"),
+                    "lon": record.get_value("position_long"),
+                    "speed": record.get_value("speed"),
+                    "distance": record.get_value("distance"),
+                    "heartrate": record.get_value("heart_rate"),
                     "first": False,
-                    "last": False
-                })
-    points[0]["first"] = True
-    points[-1]["last"] = True
+                    "last": False}
+        if points[ts]["lat"]:
+            points[ts]["lat"] = points[ts]["lat"] / 11930465 #https://gis.stackexchange.com/questions/371656/garmin-fit-coordinate-system
+        if points[ts]["lon"]:
+            points[ts]["lon"] = points[ts]["lon"] / 11930465
+            if not first_valid_ts:
+                first_valid_ts = ts
+    
+    points[first_valid_ts]["first"] = True
+    points[list(points.keys())[-1]]["last"] = True
 
     sport_name = "Unknown sport"
     for exr in db_access.registered_users[user]["exercise_records"]:
@@ -311,7 +320,7 @@ def viewExerciseDetails(user, eid):
             sport_name = exr.desc.lstrip("PF: ")
             break
 
-    return render_template("exercise_view.html",
+    return render_template("exercise_view_route.html",
                            username=user,
                            coords=points,
                            sport=sport_name)
