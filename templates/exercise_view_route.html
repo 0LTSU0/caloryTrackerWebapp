@@ -44,9 +44,35 @@
     <div class="container d-flex flex-column justify-content-center align-items-center" style="margin-top: 20px;">        
         <div class="row w-100" style="max-width: 850px;">
             <div style="text-align: center;">
-                <b id="length"></b><a>km {{sport}} from </a><a id="exerciseTS">datetime</a>
-            </div><br><br>
-            
+                <!--b id="length"></b><a>km {{sport}} from </a><a id="exerciseTS">datetime</a-->
+                <b style="font-size: large;">{{sport}} from </b><b style="font-size: large;" id="exerciseTS">{{exercise_date}}</b>
+            </div>
+            <div>
+                <table class="table table-bordered" style="margin-top: 20px;">
+                    <thead>
+                        <tr>
+                            <th scope="col">Start time</th>
+                            <th scope="col">End time</th>
+                            <th scope="col">Duration</th>
+                            <th scope="col">Calories</th>
+                            <th scope="col">Distance</th>
+                            <th scope="col">Max heart rate</th>
+                            <th scope="col">Avg heart rate</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stat_table_body">
+                        <tr>
+                            <td>{{start_ts}}</td>
+                            <td>{{end_ts}}</td>
+                            <td>{{duration}}</td>
+                            <td>{{calories}}</td>
+                            <td>{{distance}}</td>
+                            <td>{{max_hr}}</td>
+                            <td>{{avg_hr}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             
             <div id="map"></div>
             <canvas id="altcanvas" onmouseout="altGraphMouseOut(this)" height="250"></canvas>

@@ -321,7 +321,7 @@ function syncWithPolarFlow()
 }
 
 function setDateInfo(ts) {
-    let tsString = ts.substring(0, 10) + " " + ts.substring(11, 16);
+    let tsString = ts.substring(0, 10)
     $("#exerciseTS").text(tsString);
 }
 
@@ -356,14 +356,14 @@ function drawExerciseMap()
             tss.push(ts);
             valid_coord_objs.push(coord)
             if (coord.first) {
-                setDateInfo(ts); // header of the first valid coordinate should be decent timestamp for the exercise
+                //setDateInfo(ts); // header of the first valid coordinate should be decent timestamp for the exercise
                 L.marker([coord.lat, coord.lon], {icon: greenIcon}).bindPopup("Start").addTo(map);
                 hoverMarker = L.circleMarker([coord.lat, coord.lon], {radius: 7});
                 hoverMarker.addTo(map);
                 hoverMarker.setStyle({ opacity: 0 });
             } else if (coord.last) {
                 L.marker([coord.lat, coord.lon], {icon: redIcon}).bindPopup("End").addTo(map);
-                $("#length").text((coord.distance / 1000).toFixed(2)) // using distance from last record should be ok
+                //$("#length").text((coord.distance / 1000).toFixed(2)) // using distance from last record should be ok
             }
         }
     }

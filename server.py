@@ -1,4 +1,5 @@
 import os
+import statistics
 import fitparse
 from flask import Flask
 from flask import redirect, render_template, url_for, request, jsonify, send_from_directory, make_response
@@ -291,6 +292,12 @@ def viewExerciseDetails(user, eid):
     if not route_available:
         return "Support for showing exercises without route information TODO"
 
+    calories = "Unknown"
+    for record in db_access.registered_users[user]["exercise_records"]:
+        if eid in record.gpx_path:
+            calories = record.calories
+            break
+    
     fitfile = fitparse.FitFile(gpx_dir + "/data.fit")
     points = {}
     first_valid_ts = None
@@ -320,10 +327,29 @@ def viewExerciseDetails(user, eid):
             sport_name = exr.desc.lstrip("PF: ")
             break
 
+    #TODO should probably move the statistics calculation into separate function
+    ts_keys = list(points.keys())
+    date_str = ts_keys[0].split("T")
+    date_str = f"{date_str[0].split("-")[2]}.{date_str[0].split("-")[1]}.{date_str[0].split("-")[0]}"
+    start_dt = datetime.fromisoformat(ts_keys[0])
+    end_dt = datetime.fromisoformat(ts_keys[-1])
+    duration = end_dt - start_dt
+    hours, remainder = divmod(duration.seconds, 60*60)
+    minutes, seconds = divmod(remainder, 60)
+    duration_str = f"{hours}:{minutes}:{seconds}"
+    hrs = [x["heartrate"] for x in points.values()]
     return render_template("exercise_view_route.html",
                            username=user,
                            coords=points,
-                           sport=sport_name)
+                           sport=sport_name,
+                           exercise_date=date_str,
+                           start_ts=ts_keys[0].split("T")[1],
+                           end_ts=ts_keys[-1].split("T")[1],
+                           duration=duration_str,
+                           calories=f"{calories}kcal",
+                           distance=f"{round(points[list(points.keys())[-1]]["distance"] / 1000, 2)}km",
+                           max_hr=f"{max(hrs)}bpm",
+                           avg_hr=f"{round(statistics.mean(hrs), 2)}bpm")
 
 
 if __name__ == "__main__":
