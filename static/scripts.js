@@ -416,7 +416,7 @@ function drawAltitudeGraph(labels, valid_coords)
             enabled: true,
             mode: 'nearest',
             intersect: false,
-            callbacks: { // only show altitude value in popup
+            callbacks: { // dont show x-axis value in popup
               title: () => null
             }
           }

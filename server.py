@@ -291,7 +291,7 @@ def viewExerciseDetails(user, eid):
     if not route_available:
         return "Support for showing exercises without route information TODO"
 
-    fitfile = fitparse.FitFile("testdir/data.fit")
+    fitfile = fitparse.FitFile(gpx_dir + "/data.fit")
     points = {}
     first_valid_ts = None
     for record in fitfile.get_messages("record"):
