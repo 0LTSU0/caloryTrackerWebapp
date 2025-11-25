@@ -191,13 +191,13 @@ def fetch_new_trainingdata_from_pf(userdata):
     for exercise_link in r_json["exercises"]:
         data = requests.get(exercise_link, headers=h)
         d_json = data.json()
-        print(f"got new exercise for user {userdata.get("id")} from polar flow:", d_json)
+        print(f'got new exercise for user {userdata.get("id")} from polar flow:', d_json)
         start_time = dt.strptime(d_json["start-time"], "%Y-%m-%dT%H:%M:%S")
         #start_time = start_time.replace(tzinfo=timezone.utc)
         #epoch_ts = int(start_time.timestamp() + (int(d_json["start-time-utc-offset"]) * 60))
         epoch_ts = start_time.timestamp()
-        ex_data.append(exerciseRecord(epoch_ts, d_json["calories"], f"PF: {d_json["detailed-sport-info"]}", pf_id=d_json["id"]))
-        gpx_dir = f"pf_data_{d_json["id"]}"
+        ex_data.append(exerciseRecord(epoch_ts, d_json["calories"], f'PF: {d_json["detailed-sport-info"]}', pf_id=d_json["id"]))
+        gpx_dir = f'pf_data_{d_json["id"]}'
         os.mkdir(gpx_dir)
         if d_json["has-route"]:
             # if route data is available, get gpx (though .fit seems to be way better format and we can do everything with it, download these for now just in case)

@@ -330,7 +330,7 @@ def viewExerciseDetails(user, eid):
     #TODO should probably move the statistics calculation into separate function
     ts_keys = list(points.keys())
     date_str = ts_keys[0].split("T")
-    date_str = f"{date_str[0].split("-")[2]}.{date_str[0].split("-")[1]}.{date_str[0].split("-")[0]}"
+    date_str = f'{date_str[0].split("-")[2]}.{date_str[0].split("-")[1]}.{date_str[0].split("-")[0]}'
     start_dt = datetime.fromisoformat(ts_keys[0])
     end_dt = datetime.fromisoformat(ts_keys[-1])
     duration = end_dt - start_dt
@@ -347,7 +347,7 @@ def viewExerciseDetails(user, eid):
                            end_ts=ts_keys[-1].split("T")[1],
                            duration=duration_str,
                            calories=f"{calories}kcal",
-                           distance=f"{round(points[list(points.keys())[-1]]["distance"] / 1000, 2)}km",
+                           distance=f'{round(points[list(points.keys())[-1]]["distance"] / 1000, 2)}km',
                            max_hr=f"{max(hrs)}bpm",
                            avg_hr=f"{round(statistics.mean(hrs), 2)}bpm")
 
