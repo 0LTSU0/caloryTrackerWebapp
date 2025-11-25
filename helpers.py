@@ -75,7 +75,7 @@ def numerize_food_vals_in_new_data(data):
             item["calories"] = float(item["calories"])
         except ValueError:
             item["calories"] = 0.0
-        item["datetime"] = int(item["datetime"])
+        item["datetime"] = int(float(item["datetime"]))
         converted.append(item)
     return converted
 
