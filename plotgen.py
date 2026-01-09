@@ -45,6 +45,21 @@ def generate_food_record_plot(entries: dict, target=0, show=False):
     fig.update_layout(barmode='stack',
                       margin=dict(l=20, r=20, t=20, b=20))
     
+    # generate activity burn line
+    y_activity_burns = []
+    for key, val in entries.items():
+        if val['activity']:
+            y_activity_burns.append(val['activity'].calories)
+        else:
+            y_activity_burns.append(0)
+    if any(y_activity_burns): # if we dont have polarflow integration enabled, there wont be any data so dont even try generating the line
+        fig.add_trace(go.Scatter(
+            name="Activity burn",
+            x=x_keys, y=y_activity_burns,
+            mode="lines+markers",
+            line=dict(color="blue")
+        ))
+    
     if avg_list: #cant calculate if 0 records
         avg = round(sum(avg_list) / len(avg_list), 2)
     else:

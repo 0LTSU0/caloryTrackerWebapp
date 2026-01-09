@@ -33,3 +33,16 @@ thirdpartyconnections:
 -pf_token polar flow token
 -pf_token_exp polar flow token expiry timestamp
 -pf_user_id polar user id needed for requests
+
+activity:
+-id INTEGER PRIMARY KEY AUTOINCREMENT
+-starttime INTEGER <epoch>
+-endtime INTEGER <epoch>
+-activeduration INTEGER <seconds>
+-inactiveduration INTEGER <seconds>
+-dailyactivity REAL <activity target percentage>
+-calories INTEGER
+-activecalories INTEGER
+-steps INTEGER
+-inactivityalerts INTEGER
+-distancefromsteps REAL <not sure what this means exactly but its returned from the api. Seems to be in meters>

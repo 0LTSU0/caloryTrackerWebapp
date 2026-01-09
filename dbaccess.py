@@ -62,7 +62,7 @@ class dbAccess():
         for row in user_rows:
             #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal, normaldailyburn
             username = row[1]
-            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": [], "pf_integration": PolarFlowConnection()}
+            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": [], "activity_records": [], "pf_integration": PolarFlowConnection()}
             print("Loaded user:", username, self.registered_users[username])
             for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, food, calories, note
@@ -82,6 +82,10 @@ class dbAccess():
                 entry = exerciseRecord(e_row[1], e_row[2], e_row[3], extra_data_path, extra_data_available)
                 self.registered_users[username]["exercise_records"].append(entry)
                 print("Loaded entry", entry, "for user", username)
+            for a_row in self.cur.execute(f'SELECT * FROM userdata_activity_{username} ORDER BY id ASC').fetchall():
+                entry = activityRecord.fromdbrow(a_row)
+                self.registered_users[username]["activity_records"].append(entry)
+                print(f"Loaded entry: {entry} for user {username}")
         self.load_third_party_integration_table()
 
 
@@ -103,6 +107,9 @@ class dbAccess():
                 user_table_name = f"userdata_exercises_{row[1]}"
                 if not (user_table_name,) in res:
                     self.init_user_data_table(user_table_name)
+                user_table_name = f"userdata_activity_{row[1]}"
+                if not (user_table_name,) in res:
+                    self.init_user_data_table(user_table_name)
         if not ("thirdpartyconnections",) in res:
             print("No thirdparty service table in db, creating it")
             self.init_thridparty_table()
@@ -118,6 +125,9 @@ class dbAccess():
         elif "exercises" in table_name:
             print("Creating table:", table_name)
             self.cur.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY AUTOINCREMENT, datetime INTEGER, calories REAL, desc TEXT)")
+        elif "activity" in table_name:
+            print("Creating table:", table_name)
+            self.cur.execute(f"CREATE TABLE {table_name}(id INTEGER PRIMARY KEY AUTOINCREMENT, starttime INTEGER, endttime INTEGER, activeduration INTEGER, inactiveduration INTEGER, dailyactivity REAL, calories INTEGER, activecalories INTEGER, steps INTEGER, inactivityalerts INTEGER, distancefromsteps REAL)")
         else:
             print("Attempted to create unknown type of userdata table", table_name)
 
@@ -220,14 +230,21 @@ class dbAccess():
         curr_date += datetime.timedelta(days=1)
         end_epoch = curr_date.timestamp()
         res = []
-        for frecord in self.registered_users[user][search]:
-            if search == "exercise_records":
-                if frecord.datetime >= start_epoch and frecord.datetime < end_epoch:
-                    res.append(frecord)
-            else:
-                if frecord["datetime"] >= start_epoch and frecord["datetime"] < end_epoch:
-                    res.append(frecord)
-        return res
+        if search == "activity_records":
+            last_match = None
+            for arecord in self.registered_users[user][search]:
+                if arecord.starttime >= start_epoch and arecord.endttime < end_epoch:
+                    last_match = arecord
+            return last_match
+        else:
+            for frecord in self.registered_users[user][search]:
+                if search == "exercise_records":
+                    if frecord.datetime >= start_epoch and frecord.datetime < end_epoch:
+                        res.append(frecord)
+                else:
+                    if frecord["datetime"] >= start_epoch and frecord["datetime"] < end_epoch:
+                        res.append(frecord)
+            return res
     
     def get_daily_entries_in_range(self, user, st, et): #TODO: imporove this whole graph generation logic, it currently translates timestamps to strings back many times for no reason
         curr_date = dt.fromtimestamp(st)
@@ -236,7 +253,8 @@ class dbAccess():
             key = f"{curr_date.day}.{curr_date.month}.{curr_date.year}"
             foods = self.get_entries_day(user, epoch_to_ddmmyyyy(curr_date.timestamp()), "food_records")
             exercises = self.get_entries_day(user, epoch_to_ddmmyyyy(curr_date.timestamp()), "exercise_records")
-            res[key] = {"food": foods, "exercise": exercises}
+            activity = self.get_entries_day(user, epoch_to_ddmmyyyy(curr_date.timestamp()), "activity_records")
+            res[key] = {"food": foods, "exercise": exercises, "activity": activity}
             curr_date = curr_date + td(days=1)
         return res
     
@@ -280,6 +298,8 @@ class dbAccess():
             print(e)
 
     def add_exercises_for_user(self, user, add_exercises):
+        if not add_exercises:
+            return
         try:
             tablename = f"userdata_exercises_{user}"
             with self.thlock:
@@ -313,6 +333,22 @@ class dbAccess():
                 self.db.commit()
         except Exception as e:
             print(e)
+
+
+    def add_activity_records_for_user(self, user: str, add_activities: list[activityRecord]) -> None:
+        if not add_activities:
+            return
+        tablename = f"userdata_activity_{user}"
+        try:
+            with self.thlock:
+                for entry in add_activities:
+                    sql = f"INSERT INTO {tablename} (starttime, endttime, activeduration, inactiveduration, dailyactivity, calories, activecalories, steps, inactivityalerts, distancefromsteps) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    self.cur.execute(sql, (entry.starttime, entry.endttime, entry.activeduration, entry.inactiveduration, entry.dailyactivity, entry.calories, entry.activecalories, entry.steps, entry.inactivityalerts, entry.distancefromsteps))
+                    self.registered_users[user]["activity_records"].append(entry)
+                self.db.commit()
+        except Exception as e:
+            print(e)
+
 
     def delete_exercises_for_user(self, user, delete_exercises):
         try:

@@ -37,6 +37,7 @@ def foods_day(date):
     if request.method == "GET":
         daily_foods = db_access.get_entries_day(username, date, "food_records")
         daily_exercises = db_access.get_entries_day(username, date, "exercise_records")
+        daily_activity = db_access.get_entries_day(username, date, "activity_records")
         dailylimit, defaultburn, weightgoal, pf_connected = db_access.fill_settings_form(username)
         sum_eaten = round(sum([float(x['calories']) for x in daily_foods]), 2)
         sum_exercised = round(sum([float(x.calories) for x in daily_exercises]), 2)
@@ -46,9 +47,10 @@ def foods_day(date):
         else:
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {round(abs(dailylimit-sum_eaten+sum_exercised), 2)}kcal over."
             text_good = False
+        if daily_activity:
+            text += f" Total calory burn today from {daily_activity.source}: {daily_activity.calories}!"
         recommendations = generate_autofill_recommendations(db_access.get_entries_all(username, "food_records"))
 
-        
         #todo move plot stuff to separate method
         plot_endt = epoch_for_date(date, True)
         plot_startt = epoch_for_date(get_datestring_at_offset(date, -7), False)
@@ -245,12 +247,13 @@ def syncWithPolarFlow():
     if not db_access.check_session_token_validity(ses_token):
         return redirect("/login")
     username = ses_token.split("|")[0]
-    #target_date = request.get_json()
+    
     new_ex_data = fetch_new_trainingdata_from_pf(db_access.registered_users.get(username))
-    #new_ex_data = [ #TEMPTESTTEMPTESTTEMPTEST
-    #    exerciseRecord(1751990040, 420, "PF: testdummydataWITHPOBJ", pf_id=54321)
-    #]
     db_access.add_exercises_for_user(username, new_ex_data)
+    
+    new_activity_data = get_new_activity_info_from_pf(db_access.registered_users.get(username))
+    db_access.add_activity_records_for_user(username, new_activity_data)
+
     return redirect("/foods/day")
 
 @app.route("/pfoauth")

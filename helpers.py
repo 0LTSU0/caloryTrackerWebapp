@@ -21,6 +21,66 @@ class exerciseRecord():
 
     def __eq__(self, other):
         return self.datetime == other.datetime and self.calories == other.calories and self.desc == other.desc
+    
+class activityRecord():
+    def __init__(self, id, starttime, endttime, activeduration, inactiveduration, dailyactivity, calories, activecalories, steps, inactivityalerts, distancefromsteps):
+        self.id = id
+        self.starttime = starttime
+        self.endttime = endttime
+        self.activeduration = activeduration
+        self.inactiveduration = inactiveduration
+        self.dailyactivity = dailyactivity
+        self.calories = calories
+        self.activecalories = activecalories
+        self.steps = steps
+        self.inactivityalerts = inactivityalerts
+        self.distancefromsteps = distancefromsteps
+        self.source = "Polar Flow" # currently only possibility for getting these
+
+    @classmethod
+    def fromdbrow(cls, row):
+        return cls(
+            row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10]
+        )
+    
+    @classmethod
+    def fromjsonentry(cls, entry):
+        if entry["start_time"].count(":") == 2:
+            start_ts = dt.strptime(entry["start_time"], "%Y-%m-%dT%H:%M:%S").timestamp()
+        else:
+            start_ts = dt.strptime(entry["start_time"], "%Y-%m-%dT%H:%M").timestamp()
+        if entry["end_time"].count(":") == 2:
+            end_ts = dt.strptime(entry["end_time"], "%Y-%m-%dT%H:%M:%S").timestamp()
+        else:
+            end_ts = dt.strptime(entry["end_time"], "%Y-%m-%dT%H:%M").timestamp()
+        return cls(
+            None, #dont know primarykey id here but we dont really need it for anything anyway so whatever
+            start_ts,
+            end_ts,
+            ISO8601_duration_to_seconds(entry["active_duration"]),
+            ISO8601_duration_to_seconds(entry["inactive_duration"]),
+            float(entry["daily_activity"]),
+            int(entry["calories"]),
+            int(entry["active_calories"]),
+            int(entry["steps"]),
+            int(entry["inactivity_alert_count"]),
+            float(entry["distance_from_steps"])
+        )
+    
+    def __str__(self):
+        s = "activityRecord Object: "
+        for key, value in vars(self).items():
+            s += f"{key}: {value}, "
+        return s
+    
+    def __eq__(self, other):
+        for key, value in vars(self).items():
+            if key == "id":
+                continue # ids dont matter for comparison
+            if vars(other).get(key) != value:
+                return False
+        return True
+
 
 def is_integer(s): #from chatgpt :)
     return re.fullmatch(r"[+-]?\d+", s) is not None
@@ -36,6 +96,17 @@ def ddmmyyy_to_datetime(timestring):
 
 def compare_e_items(_1, _2):
     return _1["datetime"] == _2["datetime"] and _1["calories"] == _2["calories"] and _1["desc"] == _2["desc"]
+
+def ISO8601_duration_to_seconds(duration: str) -> int:
+    match = re.fullmatch(
+        r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?",
+        duration
+    )
+    if not match:
+        raise ValueError(f"Invalid duration: {duration}")
+
+    hours, minutes, seconds = match.groups(default="0")
+    return int(hours) * 3600 + int(minutes) * 60 + int(seconds)
 
 def e_data_json_to_obj(ds):
     res = []
@@ -164,7 +235,7 @@ def register_pf_user(username, access_token):
 
 
 def fetch_new_trainingdata_from_pf(userdata):
-    # Note to self: Polar flow only gives you exercise data that you have not fetched yet when using exercise-transactions
+    # Note to self: Polar flow only gives you exercise data that you have not fetched yet when using exercise-transactions. This means we don't need to worry about adding same entry multiple times
     if not userdata.get("pf_integration").is_connected():
         return None
     pf_token = userdata.get("pf_integration").token
@@ -215,3 +286,37 @@ def fetch_new_trainingdata_from_pf(userdata):
     r = requests.put(f'https://www.polaraccesslink.com/v3/users/{pf_uid}/exercise-transactions/{transaction_id}', headers=h)
 
     return ex_data
+
+
+# TODO, if we sync pf multiple times during the same day, we currently end up with multiple entries with same start time but different end time and values in the db.
+# So if start times are same, the existing entry should be updated instead of adding new
+def get_new_activity_info_from_pf(userdata):
+    if not userdata.get("pf_integration").is_connected():
+        return None
+    pf_token = userdata.get("pf_integration").token
+    pf_uid = userdata.get("pf_integration").pf_user_id
+    h = {'Accept': 'application/json',  'Authorization': f'Bearer {pf_token}'}
+    r = requests.get(f'https://www.polaraccesslink.com/v3/users/activities', headers=h)
+    if r.status_code == 401:
+        print("https://www.polaraccesslink.com/v3/users/activities returned unauthorized")
+        return
+    elif r.status_code == 403:
+        print("https://www.polaraccesslink.com/v3/users/activities returned forbidden")
+        return
+    elif r.status_code != 200:
+        print(f"Unexpected status code from polaraccesslink.com/v3/users/activities {r.status_code}")
+        return
+
+    # Check if we already have this entry
+    js = r.json()
+    new_entries = []
+    for entry in js:
+        fetched_aRecord = activityRecord.fromjsonentry(entry)
+        add = True
+        for existing_aRecord in userdata["activity_records"]:
+            if fetched_aRecord == existing_aRecord:
+                add = False
+                break
+        if add:
+            new_entries.append(fetched_aRecord)
+    return new_entries
