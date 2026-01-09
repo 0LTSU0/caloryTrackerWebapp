@@ -470,6 +470,25 @@ function altGraphMouseOut(x) {
     hoverMarker.closePopup();
 }
 
+async function fetchFoodGraph(datestr) {
+    const res = await fetch(`/foods/day/${datestr}/graph`);
+    const data = await res.json();
+    console.debug("fetchFoodGraph() got", data)
+
+    document.getElementById("plotlygraph").classList.remove("plotlygraphloading");
+    let fig = data.figure
+    Plotly.newPlot(
+        "plotlygraph",
+        fig.data,
+        fig.layout,
+        { responsive: true }
+    );
+
+    graphtext_elem = document.getElementById("graphtext")
+    graphtext_elem.classList.remove("plotlygraphloadingtext");
+    graphtext_elem.textContent = `Graph average (ignoring 0s): ${data.avg}kcal`
+}
+
 $( document ).ready(function() {
     if (location.href.includes("/foods/day"))
     {
@@ -483,6 +502,9 @@ $( document ).ready(function() {
         setRowNumbersToDeleteButtons("food_table_body")
         setRowNumbersToDeleteButtons("exercise_table_body")
         convertTableEpochs()
+        
+        // short delay in case user is quickly hitting date navigation buttons
+        setTimeout(function() { fetchFoodGraph(datestr); }, 1000);
     }
 
     if (location.href.includes("/weights/"))

@@ -3,7 +3,7 @@ from scipy.stats import linregress
 import math
 from datetime import datetime
 
-def generate_food_record_plot(entries: dict, target=0, show=False):
+def generate_food_record_plot(entries: dict, target=0, show=False, html=False):
     x_keys = list(entries.keys())
     y_total_eaten_minus_burned = []
     y_total_burned = []
@@ -68,7 +68,11 @@ def generate_food_record_plot(entries: dict, target=0, show=False):
     if show:
         fig.show()
     else:
-        return fig.to_html(full_html=False), avg
+        if html:
+            return fig.to_html(full_html=False), avg
+        else:
+            fig.update_layout(width=800) #TODO: somehow set the width in js
+            return fig.to_plotly_json(), avg
 
 
 def generate_weight_plot(entries: dict, target=0.0, show=False):

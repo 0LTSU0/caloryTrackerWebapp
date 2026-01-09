@@ -7,8 +7,9 @@
 	integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
 	crossorigin="anonymous">
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+<!--script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script-->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <script src="/static/scripts.js"></script>
 
 
@@ -135,39 +136,13 @@
                 <button class="btn btn-success" style="width: 90%;" onclick="postFoodsAndExercisesDay()">Save changes</button>
             </div>
             
-            <!--div class="col-12">
-                <form style="width: 100%;" method="POST">
-                    <div class="input-group mb-3">
-                        <label for="daily_calory_target_input" class="col-sm-6 col-form-label">Daily calory target</label>
-                        <input type="text" id="daily_calory_target_input" name="daily_calory_target_input" class="form-control" placeholder="Daily calory target" aria-describedby="basic-addon2" value="{{daily_target}}">
-                        <div class="input-group-append">
-                            <span class="input-group-text" id="basic-addon2">kcal</span>
-                        </div>
-                    </div>
-                    <div class="input-group mb-3">
-                        <label for="daily_calory_burn_input" class="col-sm-6 col-form-label">Daily burn without exercise</label>
-                        <input type="text" id="daily_calory_burn_input" name="daily_calory_burn_input" class="form-control" placeholder="Daily burn without exercise" aria-describedby="basic-addon2" value="{{daily_burn}}">
-                        <div class="input-group-append">
-                            <span class="input-group-text" id="basic-addon2">kcal</span>
-                        </div>
-                    </div>
-                    <div class="input-group mb-3">
-                        <label for="weight_goal_input" class="col-sm-6 col-form-label">Weight goal</label>
-                        <input type="text" id="weight_goal_input" name="weight_goal_input" class="form-control" placeholder="Weight goal" aria-describedby="basic-addon3" value="{{weight_goal}}">
-                        <div class="input-group-append">
-                            <span class="input-group-text" id="basic-addon3">kg</span>
-                        </div>
-                    </div>
-                    {% if show_error_msg %}
-                    <text style="font-weight: bold; color: crimson;" id="error_msg_from_flask">{{error_msg}}</text>
-                    {% endif %}
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Save</button><br>
-                </form>
-            </div-->
+
         </div>
-        <div id="plotlygraph" class="plotlygraphcontainer">{{plotlyhtml | safe}}</div>
+        <!--div id="plotlygraph" class="plotlygraphcontainer">{{plotlyhtml | safe}}</div>
         <div class="col-12 text-center">
             <a>Graph average (ignoring 0s): {{avg}}kcal</a>
-        </div>
+        </div-->
+        <div id="plotlygraph" class="plotlygraphcontainer plotlygraphloading"></div>
+        <div class="col-12 text-center plotlygraphloadingtext" id="graphtext"><a>Graph loading...</a></div>
     </div>
 </body>

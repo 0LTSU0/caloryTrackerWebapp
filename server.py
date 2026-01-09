@@ -25,6 +25,16 @@ def main():
             return redirect(url_for("foods_wo_date"))
     return redirect(url_for("login"))
 
+@app.route("/foods/day/<date>/graph", methods=["GET"])
+def foods_graph(date):
+    ses_token = request.cookies.get("session")
+    username = ses_token.split("|")[0]
+    dailylimit, _, _, _ = db_access.fill_settings_form(username)
+    plot_endt = epoch_for_date(date, True)
+    plot_startt = epoch_for_date(get_datestring_at_offset(date, -7), False)
+    plot_data = db_access.get_daily_entries_in_range(username, plot_startt, plot_endt)
+    plotly, avg = generate_food_record_plot(plot_data, dailylimit)
+    return jsonify({"figure": plotly, "avg": avg})
 
 @app.route("/foods/day/<date>", methods=["GET"])
 def foods_day(date):
