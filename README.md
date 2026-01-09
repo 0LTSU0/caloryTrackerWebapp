@@ -1,6 +1,6 @@
 # caloryTrackerWebapp
 
-Small, self-hostable calory/exercise/weight tracker flask application.
+Small, self-hostable calory/exercise/weight tracker flask application with Polar Flow integration (exersice and activity tracking).
 
 ![kuva](https://github.com/user-attachments/assets/508f2f98-e1f9-4aa6-8cc2-cc1852a1ad39)
 ![kuva](https://github.com/user-attachments/assets/e7df3bfc-2b66-48e0-8346-9eeaf0c87ae1)
