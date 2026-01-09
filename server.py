@@ -61,12 +61,6 @@ def foods_day(date):
             text += f" Total calory burn today from {daily_activity.source}: {daily_activity.calories}!"
         recommendations = generate_autofill_recommendations(db_access.get_entries_all(username, "food_records"))
 
-        #todo move plot stuff to separate method
-        plot_endt = epoch_for_date(date, True)
-        plot_startt = epoch_for_date(get_datestring_at_offset(date, -7), False)
-        plot_data = db_access.get_daily_entries_in_range(username, plot_startt, plot_endt)
-        plotly, avg = generate_food_record_plot(plot_data, dailylimit)
-
         return render_template("foods.html",
                                username=username,
                                date=date,
@@ -75,8 +69,6 @@ def foods_day(date):
                                remainder_text=text,
                                remainder_text_positive=text_good,
                                foodrecms=recommendations,
-                               plotlyhtml=plotly,
-                               avg=avg,
                                pf_connected=pf_connected)
     
 
