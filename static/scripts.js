@@ -1,4 +1,6 @@
 
+const FAT2CALORIES = 7700;
+
 var usernameAvailabilityCheckInProgress = false;
 const dates = ["Sunday", "Moday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const editable_food_row = '<tr>'+
@@ -487,6 +489,51 @@ async function fetchFoodGraph(datestr) {
     graphtext_elem = document.getElementById("graphtext")
     graphtext_elem.classList.remove("plotlygraphloadingtext");
     graphtext_elem.textContent = `Graph average (ignoring 0s): ${data.avg}kcal`
+
+    createEatVBurnedBar(data)
+}
+
+function createEatVBurnedBar(data) {
+    try {
+        avgEat = parseInt(data.avg);
+        avgBurn = 0;
+        for (let d of data.figure.data) {
+            if (d.name == "Activity burn") {
+                let total = 0;
+                let count = 0;
+                for (let val of d.y) {
+                    if (val != 0) {
+                        total = total + val;
+                        count = count + 1;
+                    }
+                }
+                if (!total) {
+                    throw new Error("No activity burn values available")
+                }
+                avgBurn = parseInt((total / count).toFixed(0));
+                break;
+            }
+        }
+        
+        let percentage = parseInt((avgEat / avgBurn) * 100);
+        console.debug("createEatVBurnedBar() avgeat, avgburn, percentage", avgEat, avgBurn, percentage);
+        const bar = document.getElementById("weeklyavgbar");
+        bar.style.setProperty("--value", percentage);
+        bar.style.setProperty("display", "block");
+        let diff = avgEat - avgBurn;
+        let weeklykilos = ((diff * 7) / FAT2CALORIES).toFixed(2);
+        weeklyavgbar_text_elem = document.getElementById("weeklyavgbar_text");
+        weeklyavgbar_text_elem.style.setProperty("display", "block");
+        weeklyavgbar_text_elem.style.color = "darkred";
+        let emoji = "😫😭";
+        if (weeklykilos < 0) {
+            emoji = "💪💪💪";
+            weeklyavgbar_text_elem.style.color = "darkgreen";
+        }
+        weeklyavgbar_text_elem.textContent = `Weekly average: ${diff}kcal/day ➟ ${weeklykilos}kg per week ${emoji}`
+    } catch (error) {
+        console.warn("Failed to create eat vs burn bar", error)
+    }
 }
 
 $( document ).ready(function() {
@@ -504,7 +551,7 @@ $( document ).ready(function() {
         convertTableEpochs()
         
         // short delay in case user is quickly hitting date navigation buttons
-        setTimeout(function() { fetchFoodGraph(datestr); }, 1000);
+        setTimeout(function() { fetchFoodGraph(datestr); }, 500);
     }
 
     if (location.href.includes("/weights/"))

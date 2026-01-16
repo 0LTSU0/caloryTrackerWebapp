@@ -81,6 +81,13 @@
   margin-top: 20px;
 }
 
+.plotlygraphcontainer .plotly {
+  border: solid;
+  border-color: lightblue;
+  border-width: 1px;
+  border-radius: 10px;
+}
+
 .weight_input_size_constraints {
   height: 30px !important;
   width: 90% !important;
@@ -99,6 +106,18 @@
 
 .plotlygraphloadingtext {
   font-weight: bold;
+}
+
+.weeklyavgbar_text {
+  font-weight: bold;
+}
+
+#weeklyavgbar_text {
+  display: none;
+}
+
+#weeklyavgbar {
+  display: none;
 }
 
 /* https://css-loaders.com/wobbling/ */
@@ -121,4 +140,32 @@
    33% {clip-path: inset(0 0 0 -100px)}
    50% {clip-path: inset(0 0 0 0)     }
    83% {clip-path: inset(0 -100px 0 0)}
+}
+
+/* idk from chatgpt */
+.progress {
+  --value: 0;
+
+  /* under-target fill */
+  --under: clamp(0, var(--value), 100);
+
+  /* overflow amount */
+  --over: clamp(0, calc(var(--value) - 100), 100);
+
+  /* green is under unless overflow exists */
+  --green: clamp(0, calc(var(--under) - var(--over)), 100);
+
+  width: 500px;
+  height: 60px !important;
+  border-radius: 116px;
+  background: linear-gradient(
+    to right,
+    #4caf50 0%,
+    #4caf50 calc(var(--green) * 1%),
+    #ff5252 calc(var(--green) * 1%),
+    #ff5252 calc((var(--green) + var(--over)) * 1%),
+    #eee calc((var(--green) + var(--over)) * 1%),
+    #eee 100%
+  );
+  margin-top: 20px;
 }
