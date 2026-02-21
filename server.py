@@ -1,6 +1,7 @@
 import os
 import statistics
 import fitparse
+import argparse
 from flask import Flask
 from flask import redirect, render_template, url_for, request, jsonify, send_from_directory, make_response
 
@@ -289,7 +290,7 @@ def viewExerciseDetails(user, eid):
     sesuser = ses_token.split("|")[0]
     if user != sesuser:
         return "You cannot view exercises of other people, go away >:("
-    gpx_dir = f"pf_data/{user}/{eid}"
+    gpx_dir = f"{db_access.pf_data_prefix}/{user}/{eid}"
     if not os.path.exists(gpx_dir):
         return "Extra details for this exercise do not exist. If you got here by clicking a button in exercise list then there must be a bug somewhere 🤔"
     
@@ -358,8 +359,12 @@ def viewExerciseDetails(user, eid):
 
 
 if __name__ == "__main__":
-    PF_CLIENT_ID, PF_CLIENT_SECRET = get_pf_integration_info()
-    db_access = dbAccess()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config_path", type=str, default=".", help="Path to directory that contains config files (pfoauth.json)")
+    parser.add_argument("--data_path", type=str, default=".", help="Path to directory that contains data storages (db.db and pf_data directory)")
+    args = parser.parse_args()
+    PF_CLIENT_ID, PF_CLIENT_SECRET = get_pf_integration_info(args.config_path)
+    db_access = dbAccess(args.data_path)
     db_access.init_database()
     app.run(host="0.0.0.0", port=5000, debug=False)
     

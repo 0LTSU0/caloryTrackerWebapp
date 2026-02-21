@@ -183,14 +183,14 @@ def get_datestring_at_offset(date, offset):
     new_date = start_date + td(days=offset)
     return epoch_to_ddmmyyyy(new_date.timestamp())
 
-def get_pf_integration_info():
+def get_pf_integration_info(path):
     # get polar flow client id from environment or file
     client_id = os.environ.get("pf_client_id")
     client_secret = os.environ.get("pf_client_secret")
     if client_id and client_secret:
         return client_id, client_secret
     try:
-        with open("pfoauth.json", "r") as f:
+        with open(f"{path}/pfoauth.json", "r") as f:
             pfouathjson = json.load(f)
             return pfouathjson["client_id"], pfouathjson["client_secret"] 
     except:

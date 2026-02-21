@@ -44,14 +44,16 @@ class PolarFlowConnection():
 
 
 class dbAccess():
-    def __init__(self):
+    def __init__(self, data_dir):
         self.db = None
         self.cur = None
         self.thlock = threading.Lock() #with many users this would be stupid bottleneck but cant be arsed to implement separate connection for each request
         self.registered_users = {} #users in db to reduce times db needs to be queried
+        self.db_path = data_dir + "/db.db"
+        self.pf_data_prefix = data_dir + "/pf_data"
     
     def init_database(self): #if some table is missing from db, it is created and also current stuff contained inside db is loaded into memory
-        self.db = sqlite3.connect("db.db", check_same_thread=False)
+        self.db = sqlite3.connect(self.db_path, check_same_thread=False)
         self.cur = self.db.cursor()
         
         #self.cur.execute("DROP TABLE thirdpartyconnections")
@@ -77,7 +79,7 @@ class dbAccess():
                 print("Loaded entry", entry, "for user", username)
             for e_row in self.cur.execute(f'SELECT * FROM userdata_exercises_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, calories, desc
-                extra_data_path = f"pf_data/{username}/{e_row[0]}"
+                extra_data_path = f"{self.pf_data_prefix}/{username}/{e_row[0]}"
                 extra_data_available = os.path.exists(extra_data_path)
                 entry = exerciseRecord(e_row[1], e_row[2], e_row[3], extra_data_path, extra_data_available)
                 self.registered_users[username]["exercise_records"].append(entry)
@@ -313,11 +315,11 @@ class dbAccess():
                     extra_data_available = False
                     if entry.pf_id: #this is available when were adding exercises from polar flow sync
                         src_path = f"pf_data_{entry.pf_id}"
-                        target_path = f"pf_data/{user}"
-                        target_path_with_id = f"pf_data/{user}/{new_item_id}"
+                        target_path = f"{self.pf_data_prefix}/{user}"
+                        target_path_with_id = f"{self.pf_data_prefix}/{user}/{new_item_id}"
                         if os.path.isdir(src_path):
-                            if not os.path.isdir("pf_data"):
-                                os.mkdir("pf_data")
+                            if not os.path.isdir(f"{self.pf_data_prefix}"):
+                                os.mkdir(f"{self.pf_data_prefix}")
                             if not os.path.isdir(target_path):
                                 os.mkdir(target_path)
                             os.mkdir(target_path_with_id)
@@ -328,7 +330,7 @@ class dbAccess():
                             os.rename(src_path+"/data.fit", target_path_with_id+"/data.fit")
                             shutil.rmtree(src_path)
                             extra_data_available = True
-                    entry = exerciseRecord(datetime, calories, desc, f"pf_data/{user}/{new_item_id}", extra_data_available)
+                    entry = exerciseRecord(datetime, calories, desc, f"{self.pf_data_prefix}/{user}/{new_item_id}", extra_data_available)
                     self.registered_users[user]["exercise_records"].append(entry)
                 self.db.commit()
         except Exception as e:
