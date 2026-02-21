@@ -257,6 +257,7 @@ class dbAccess():
             exercises = self.get_entries_day(user, epoch_to_ddmmyyyy(curr_date.timestamp()), "exercise_records")
             activity = self.get_entries_day(user, epoch_to_ddmmyyyy(curr_date.timestamp()), "activity_records")
             res[key] = {"food": foods, "exercise": exercises, "activity": activity}
+            print("get_daily_entries_in_range()", key, res[key])
             curr_date = curr_date + td(days=1)
         return res
     
