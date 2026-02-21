@@ -62,6 +62,11 @@ def foods_day(date):
             text += f" Total calory burn today from {daily_activity.source}: {daily_activity.calories}!"
         recommendations = generate_autofill_recommendations(db_access.get_entries_all(username, "food_records"))
 
+        #trim gpx_path
+        for ex in daily_exercises:
+            if "/" in ex.gpx_path:
+                ex.gpx_path = f"pf_data/{ex.gpx_path.split("/")[-2]}/{ex.gpx_path.split("/")[-1]}"
+
         return render_template("foods.html",
                                username=username,
                                date=date,

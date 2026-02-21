@@ -13,6 +13,18 @@ Small, self-hostable calory/exercise/weight tracker flask application with Polar
 - Ability to delete weight values
 - Improve error handling. Currently if something goes wrong error is only logged to browser console (if even that)
   
+## Running
+### Docker
+Build + run
+```
+sudo docker build -t ct_webapp .
+sudo docker run -d -v /path/to/config:/ct_config -v /path/to/data:/ct_data -p 5000:5000 ct_webapp:latest
+```
+Access logs:
+```
+sudo docker logs ct_webapp
+```
+
 ## ThirdParty content used:
 - https://blog.getbootstrap.com/2024/02/20/bootstrap-5-3-3/
 - https://jquery.com/
