@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  docker:
+  Dockerize:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -29,5 +29,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/ct_webapp:latest
-            ghcr.io/ct_webapp:${{ github.sha }}
+            ghcr.io/${{ env.IMAGE_OWNER }}/ct_webapp:latest
+            ghcr.io/${{ env.IMAGE_OWNER }}/ct_webapp:${{ github.sha }}
