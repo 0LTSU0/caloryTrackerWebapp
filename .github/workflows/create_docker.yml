@@ -29,5 +29,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ env.IMAGE_OWNER }}/ct_webapp:latest
-            ghcr.io/${{ env.IMAGE_OWNER }}/ct_webapp:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/ct_webapp:latest
+            ghcr.io/${{ github.repository_owner }}/ct_webapp:${{ github.sha }}
