@@ -18,3 +18,4 @@ scipy==1.17.0
 statistics==1.0.3.5
 urllib3==2.6.3
 Werkzeug==3.1.6
+debugpy

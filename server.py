@@ -9,6 +9,12 @@ from dbaccess import *
 from helpers import *
 from plotgen import *
 
+# Uncomment for docker debugging
+#import debugpy
+#debugpy.listen(("0.0.0.0", 5678))
+#print("Waiting for debugger attach...")
+#debugpy.wait_for_client()
+
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 db_access = None
