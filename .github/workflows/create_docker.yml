@@ -29,5 +29,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/ct_webapp:latest
-            ghcr.io/${{ github.repository_owner }}/ct_webapp:${{ github.sha }}
+            ghcr.io/0ltsu0/ct_webapp:latest
+            ghcr.io/0ltsu0/ct_webapp:${{ github.sha }}
