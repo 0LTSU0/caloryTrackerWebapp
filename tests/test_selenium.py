@@ -8,6 +8,7 @@ import threading
 import random
 import string
 import json
+import platform
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -54,7 +55,8 @@ class TestClass:
 
         # ---- Start Selenium ----
         chrome_options = Options()
-        #chrome_options.add_argument("--headless")
+        if "Linux" in platform.platform():
+            chrome_options.add_argument("--headless=new")
         cls.driver = webdriver.Chrome(options=chrome_options)
         cls.base_url = f"http://localhost:5001"
         cls.driver.get(cls.base_url)
