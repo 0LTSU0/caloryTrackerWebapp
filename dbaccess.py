@@ -4,6 +4,7 @@ import threading
 import time
 import datetime
 import shutil
+import os
 
 from helpers import *
 
@@ -233,6 +234,9 @@ class dbAccess():
         end_epoch = curr_date.timestamp()
         res = []
         if search == "activity_records":
+            #if os.environ.get('IS_RUNNING_IN_DOCKER', False): # the timezones are somehow wrong when in docker, temp hack to adjust
+            #    start_epoch -= datetime.datetime.now().astimezone().utcoffset().total_seconds()
+            #    end_epoch -= datetime.datetime.now().astimezone().utcoffset().total_seconds()
             last_match = None
             for arecord in self.registered_users[user][search]:
                 if arecord.starttime >= start_epoch and arecord.endttime < end_epoch:
@@ -315,19 +319,25 @@ class dbAccess():
                     new_item_id = self.cur.lastrowid
                     extra_data_available = False
                     if entry.pf_id: #this is available when were adding exercises from polar flow sync
-                        src_path = f"pf_data_{entry.pf_id}"
+                        src_path = f"{self.pf_data_prefix}/pf_data_{entry.pf_id}"
                         target_path = f"{self.pf_data_prefix}/{user}"
                         target_path_with_id = f"{self.pf_data_prefix}/{user}/{new_item_id}"
+                        print(f"add_exercises_for_user() item has pf_data. scr_path: {src_path}, target_path: {target_path}, target_path_with_id: {target_path_with_id}")
                         if os.path.isdir(src_path):
                             if not os.path.isdir(f"{self.pf_data_prefix}"):
+                                print("add_exercises_for_user() creating", self.pf_data_prefix)
                                 os.mkdir(f"{self.pf_data_prefix}")
                             if not os.path.isdir(target_path):
+                                print("add_exercises_for_user() creating", target_path)
                                 os.mkdir(target_path)
+                            print("add_exercises_for_user() creating", target_path_with_id)
                             os.mkdir(target_path_with_id)
                             try:
+                                print("Attempting to move route.gpx {} -> {}".format(src_path+"/route.gpx", target_path_with_id+"/route.gpx"))
                                 os.rename(src_path+"/route.gpx", target_path_with_id+"/route.gpx")
                             except:
                                 pass # gpx only exists if excercise has route
+                            print("Attempting to move fitfile {} -> {}".format(src_path+"/data.fit", target_path_with_id+"/data.fit"))
                             os.rename(src_path+"/data.fit", target_path_with_id+"/data.fit")
                             shutil.rmtree(src_path)
                             extra_data_available = True

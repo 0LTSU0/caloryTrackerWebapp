@@ -262,7 +262,7 @@ def syncWithPolarFlow():
         return redirect("/login")
     username = ses_token.split("|")[0]
     
-    new_ex_data = fetch_new_trainingdata_from_pf(db_access.registered_users.get(username))
+    new_ex_data = fetch_new_trainingdata_from_pf(db_access.registered_users.get(username), db_access.pf_data_prefix)
     db_access.add_exercises_for_user(username, new_ex_data)
     
     new_activity_data = get_new_activity_info_from_pf(db_access.registered_users.get(username))
