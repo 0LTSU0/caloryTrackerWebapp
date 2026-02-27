@@ -378,4 +378,15 @@ if __name__ == "__main__":
     db_access = dbAccess(args.data_path)
     db_access.init_database()
     app.run(host="0.0.0.0", port=5000, debug=False)
+else:
+    print("Starting in test mode i.e. using env vars instead of arguments")
+    if not os.environ.get("ct_config_path") or not os.environ.get("ct_data_path"):
+        raise Exception("Missing evn variable(s)")
+    pass
+    conf_path = os.environ.get("ct_config_path")
+    data_path = os.environ.get("ct_data_path")
+    print("initializing flask app with paths", conf_path, data_path)
+    PF_CLIENT_ID, PF_CLIENT_SECRET = get_pf_integration_info(conf_path)
+    db_access = dbAccess(data_path)
+    db_access.init_database()
     

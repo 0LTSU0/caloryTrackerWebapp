@@ -176,7 +176,8 @@ class dbAccess():
                 self.init_user_data_table(f"userdata_foods_{username}")
                 self.init_user_data_table(f"userdata_weights_{username}")
                 self.init_user_data_table(f"userdata_exercises_{username}")
-            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID, "dailycalorylimit": DEFAULT_CALORY_TARGET, "weightgoal": DEFAULT_WEIGHT_GOAL, "defaultdailyburn": DEFAULT_CALORY_TARGET, "food_records": [], "weight_records": [], "exercise_records": [], "pf_integration": PolarFlowConnection()} #TODO: if user id is used for something it needs to be set to correct value
+                self.init_user_data_table(f"userdata_activity_{username}")
+            self.registered_users[username] = {"pwdhash": pwd_hash, "sessiontoken": token, "sessiontokenexp": expiry, "id": UNKNOWN_USER_ID, "dailycalorylimit": DEFAULT_CALORY_TARGET, "weightgoal": DEFAULT_WEIGHT_GOAL, "defaultdailyburn": DEFAULT_CALORY_TARGET, "food_records": [], "weight_records": [], "exercise_records": [], "activity_records": [], "pf_integration": PolarFlowConnection()} #TODO: if user id is used for something it needs to be set to correct value
             return True, token
         except Exception as e:
             print("Exception in create_new_account()", e)
