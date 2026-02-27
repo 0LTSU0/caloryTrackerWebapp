@@ -36,7 +36,7 @@ class TestClass:
             shutil.copy(os.path.join(dir_path, "..", "pfoauth.json"), cls.ct_config_path)
         else:
             j = {"client_id": "123456789", "client_secret": "qwertyuiopå"}
-            with open(os.path.join(cls.ct_config_path), "pfoauth.json", "w") as f:
+            with open(os.path.join(cls.ct_config_path, "pfoauth.json"), "w") as f:
                 json.dump(j, f)
 
         os.environ["ct_config_path"] = cls.ct_config_path
