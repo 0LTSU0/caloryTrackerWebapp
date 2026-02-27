@@ -7,6 +7,7 @@ import time
 import threading
 import random
 import string
+import json
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -34,8 +35,9 @@ class TestClass:
         if os.path.exists(os.path.join(dir_path, "..", "pfoauth.json")):
             shutil.copy(os.path.join(dir_path, "..", "pfoauth.json"), cls.ct_config_path)
         else:
-            print("PF INTEGRATION FROM ENV VARS TODO")
-            assert False
+            j = {"client_id": "123456789", "client_secret": "qwertyuiopå"}
+            with open(os.path.join(cls.ct_config_path), "pfoauth.json", "w") as f:
+                json.dump(j, f)
 
         os.environ["ct_config_path"] = cls.ct_config_path
         os.environ["ct_data_path"] = cls.ct_data_path
