@@ -57,8 +57,10 @@ class TestClass:
         chrome_options = Options()
         if "Linux" in platform.platform():
             chrome_options.add_argument("--headless=new")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--start-maximized")
         cls.driver = webdriver.Chrome(options=chrome_options)
-        cls.base_url = f"http://localhost:5001"
+        cls.base_url = f"http://127.0.0.1:5001"
         cls.driver.get(cls.base_url)
 
 
