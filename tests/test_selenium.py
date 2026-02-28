@@ -19,6 +19,11 @@ from selenium.webdriver.common.by import By
 TEST_USERNAME = "testuser_1"
 TEST_PASSWORD = "=3fF?5]'Fj13'ed]yHY&FK{CBM65I3gn" # need to use some "strong" password to prevent google pwd check from fucking everything up
 
+
+def rand_str(len):
+    return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(len))
+
+
 class TestClass:
     @classmethod
     def setup_class(cls):
@@ -76,6 +81,11 @@ class TestClass:
             EC.visibility_of_element_located((By.CSS_SELECTOR, css_selector))
         )
     
+    def get_element_xpath(self, xpath):
+        return WebDriverWait(self.driver, 10).until(
+            EC.visibility_of_element_located((By.XPATH, xpath))
+        )
+    
 
     def check_elem_exists_css(self, css_selector):
         try:
@@ -90,6 +100,14 @@ class TestClass:
     
     def is_user_logged_out(self):
         return self.check_elem_exists_css("#username")
+
+    def login(self):
+        self.get_element_css("#username").click()
+        self.get_element_css("#username").send_keys(TEST_USERNAME)
+        self.get_element_css("#password").click()
+        self.get_element_css("#password").send_keys(TEST_PASSWORD)
+        self.get_element_css("body > div > form > button.btn.btn-primary").click()
+        assert not self.is_user_logged_out() # reverse to make sure we wait for login to finish
 
 
     def test_1_create_user(self):
@@ -135,11 +153,55 @@ class TestClass:
         if self.is_user_logged_in():
             self.get_element_css("#navbarText > ul.navbar-nav.ms-auto > li > a").click()
         assert self.is_user_logged_out()
-        self.get_element_css("#username").click()
-        self.get_element_css("#username").send_keys(TEST_USERNAME)
-        self.get_element_css("#password").click()
-        self.get_element_css("#password").send_keys(TEST_PASSWORD)
-        self.get_element_css("body > div > form > button.btn.btn-primary").click()
+        self.login()
         assert self.is_user_logged_in()
+
+    
+    def test_4_logout(self):
+        if self.is_user_logged_out():
+            self.login()
+        assert self.is_user_logged_in()
+        self.get_element_css("#navbarText > ul.navbar-nav.ms-auto > li > a").click()
+        assert self.is_user_logged_out()
+        
+
+    def test_navigation_bar(self):
+        if self.is_user_logged_out():
+            self.login()
+        self.get_element_css("#navbarText > ul.navbar-nav.me-auto > li:nth-child(2) > a").click()
+        assert self.check_elem_exists_css("#weightvalueinput")
+        assert f"/weights/{TEST_USERNAME}" in self.driver.current_url
+        self.get_element_css("#navbarText > ul.navbar-nav.me-auto > li:nth-child(3) > a").click()
+        assert self.check_elem_exists_css("#daily_calory_target_input")
+        assert f"/profile/{TEST_USERNAME}" in self.driver.current_url
+        self.get_element_css("#navbarText > ul.navbar-nav.me-auto > li:nth-child(1) > a").click()
+        assert self.check_elem_exists_css("#weeklyaveragebar_container")
+        assert f"/foods/day" in self.driver.current_url
+
+    
+    def test_add_food(self):
+        if self.is_user_logged_out():
+            self.login()
+        food_name_1, food_name_2 = rand_str(10), rand_str(10)
+        food_calory_1, food_calory_2 = random.randint(100, 1000), random.randint(100, 1000)
+        food_note_1, food_note_2 = rand_str(15), rand_str(15)
+        self.get_element_css("body > div.container.d-flex.flex-column.justify-content-center.align-items-center > div.row.w-100 > div:nth-child(9) > button").click()
+        self.get_element_xpath("/html/body/div[2]/div[1]/table[1]/tbody/tr/td[2]/input").send_keys(food_name_1)
+        self.get_element_xpath("/html/body/div[2]/div[1]/table[1]/tbody/tr/td[3]/input").send_keys(food_calory_1)
+        self.get_element_xpath("/html/body/div[2]/div[1]/table[1]/tbody/tr/td[4]/input").send_keys(food_note_1)
+        time.sleep(0.5) # to make sure were not too fast for js execution
+        self.get_element_css("body > div.container.d-flex.flex-column.justify-content-center.align-items-center > div.row.w-100 > div:nth-child(9) > button").click()
+        self.get_element_xpath("/html/body/div[2]/div[1]/table[1]/tbody/tr[2]/td[2]/input").send_keys(food_name_2)
+        self.get_element_xpath("/html/body/div[2]/div[1]/table[1]/tbody/tr[2]/td[3]/input").send_keys(food_calory_2)
+        self.get_element_xpath("/html/body/div[2]/div[1]/table[1]/tbody/tr[2]/td[4]/input").send_keys(food_note_2)
+        self.get_element_css("body > div.container.d-flex.flex-column.justify-content-center.align-items-center > div.row.w-100 > div.col-3.justify-content-start > button").click()
+        time.sleep(5) # wait for request to finish
+        assert food_name_1 in self.driver.page_source
+        assert food_name_2 in self.driver.page_source
+        assert str(food_calory_1) in self.driver.page_source
+        assert str(food_calory_2) in self.driver.page_source
+        assert food_note_1 in self.driver.page_source
+        assert food_note_2 in self.driver.page_source
+
 
     #navbarText > ul.navbar-nav.ms-auto > li > a
