@@ -497,13 +497,15 @@ function createEatVBurnedBar(data) {
     try {
         avgEat = parseInt(data.avg);
         avgBurn = 0;
+        const activity_offset = parseInt(document.getElementById("activity_offset").value);
+        console.debug("createEatVBurnedBar() using activity offset", activity_offset)
         for (let d of data.figure.data) {
             if (d.name == "Activity burn") {
                 let total = 0;
                 let count = 0;
                 for (let val of d.y) {
                     if (val != 0) {
-                        total = total + val;
+                        total = total + (val - activity_offset);
                         count = count + 1;
                     }
                 }

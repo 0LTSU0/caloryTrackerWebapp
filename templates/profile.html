@@ -70,6 +70,13 @@
                             <span class="input-group-text" id="basic-addon3">kg</span>
                         </div>
                     </div>
+                    <div class="input-group mb-3">
+                        <label for="activity_offset_input" class="col-sm-6 col-form-label">Activity offset</label>
+                        <input type="text" id="activity_offset_input" name="activity_offset_input" class="form-control" placeholder="Activity offset" aria-describedby="basic-addon3" value="{{activity_offset}}">
+                        <div class="input-group-append">
+                            <span class="input-group-text" id="basic-addon3">kcal</span>
+                        </div>
+                    </div>
                     {% if show_error_msg %}
                     <text style="font-weight: bold; color: crimson;" id="error_msg_from_flask">{{error_msg}}</text>
                     {% endif %}
