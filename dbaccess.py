@@ -65,7 +65,7 @@ class dbAccess():
         for row in user_rows:
             #row is: id, username, pwdhash, sessiontoken, sessiontokenexp, dailycalories, weightgoal, normaldailyburn
             username = row[1]
-            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "food_records": [], "weight_records": [], "exercise_records": [], "activity_records": [], "pf_integration": PolarFlowConnection()}
+            self.registered_users[username] = {"pwdhash": row[2], "sessiontoken": row[3], "sessiontokenexp": row[4], "id": row[0], "dailycalorylimit": row[5], "weightgoal": row[6], "defaultdailyburn": row[7], "activity_offset": row[8], "food_records": [], "weight_records": [], "exercise_records": [], "activity_records": [], "pf_integration": PolarFlowConnection()}
             print("Loaded user:", username, self.registered_users[username])
             for f_row in self.cur.execute(f'SELECT * FROM userdata_foods_{username} ORDER BY datetime ASC').fetchall():
                 #row is: id, datetime, food, calories, note
@@ -99,6 +99,13 @@ class dbAccess():
             print("Users table does not exist in db, creating now")
             self.cur.execute("CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, pwdhash TEXT, sessiontoken TEXT, sessiontokenexp INTEGER, dailycalories INTEGER, weightgoal REAL, normaldailyburn INTEGER)")
         else:
+            print("TODO REMOVE OR ADD OTHER CHECKS: Checking if user data is in correct format")
+            self.cur.execute(f"PRAGMA table_info(users)")
+            columns = [row[1] for row in self.cur.fetchall()]
+            if not "activity_offset" in columns:
+                self.cur.execute("ALTER TABLE users ADD COLUMN activity_offset INTEGER")
+                self.db.commit()
+
             print("users table already in db, creating userdata tables for anyone missing one")
             for row in self.cur.execute('SELECT * FROM users').fetchall():
                 user_table_name = f"userdata_foods_{row[1]}"
@@ -209,21 +216,26 @@ class dbAccess():
     def fill_settings_form(self, user):
         userdata = self.registered_users.get(user)
         if not userdata:
-            return 0, 0, 0, False
-        return userdata.get("dailycalorylimit"), userdata.get("defaultdailyburn"), userdata.get("weightgoal"), userdata.get("pf_integration").is_connected()
+            return 0, 0, 0, False, 0
+        ao = 0
+        if userdata.get("activity_offset"): # by default its None instead of integer in db so keep as zero unless set
+            ao = userdata.get("activity_offset")
+        return userdata.get("dailycalorylimit"), userdata.get("defaultdailyburn"), userdata.get("weightgoal"), userdata.get("pf_integration").is_connected(), ao
     
-    def update_profile_settings(self, user, daily_calory, daily_burn, weight_goal):
+    def update_profile_settings(self, user, daily_calory, daily_burn, weight_goal, activity_offset):
         try:
             daily_calory_c = int(daily_calory)
             daily_burn_c = int(daily_burn)
             weight_goal_c = float(weight_goal)
+            activity_offset = int(activity_offset)
             with self.thlock:
-                sql = "UPDATE users SET dailycalories = ?, normaldailyburn = ?, weightgoal = ? WHERE username = ?"
-                self.cur.execute(sql, (daily_calory_c, daily_burn_c, weight_goal_c, user))
+                sql = "UPDATE users SET dailycalories = ?, normaldailyburn = ?, weightgoal = ?, activity_offset = ? WHERE username = ?"
+                self.cur.execute(sql, (daily_calory_c, daily_burn_c, weight_goal_c, activity_offset, user))
                 self.db.commit()
             self.registered_users[user]["dailycalorylimit"] = daily_calory_c
             self.registered_users[user]["defaultdailyburn"] = daily_burn_c
             self.registered_users[user]["weightgoal"] = weight_goal_c
+            self.registered_users[user]["activity_offset"] = activity_offset
             return True, ""
         except Exception as e:
             return False, "Unexpected error: " + str(e)

@@ -36,11 +36,11 @@ def main():
 def foods_graph(date):
     ses_token = request.cookies.get("session")
     username = ses_token.split("|")[0]
-    dailylimit, _, _, _ = db_access.fill_settings_form(username)
+    dailylimit, _, _, _, activity_offset = db_access.fill_settings_form(username)
     plot_endt = epoch_for_date(date, True)
     plot_startt = epoch_for_date(get_datestring_at_offset(date, -7), False)
     plot_data = db_access.get_daily_entries_in_range(username, plot_startt, plot_endt)
-    plotly, avg = generate_food_record_plot(plot_data, dailylimit)
+    plotly, avg = generate_food_record_plot(plot_data, dailylimit, activity_offset)
     return jsonify({"figure": plotly, "avg": avg})
 
 @app.route("/foods/day/<date>", methods=["GET"])
@@ -55,7 +55,7 @@ def foods_day(date):
         daily_foods = db_access.get_entries_day(username, date, "food_records")
         daily_exercises = db_access.get_entries_day(username, date, "exercise_records")
         daily_activity = db_access.get_entries_day(username, date, "activity_records")
-        dailylimit, defaultburn, weightgoal, pf_connected = db_access.fill_settings_form(username)
+        dailylimit, defaultburn, weightgoal, pf_connected, burn_offset = db_access.fill_settings_form(username)
         sum_eaten = round(sum([float(x['calories']) for x in daily_foods]), 2)
         sum_exercised = round(sum([float(x.calories) for x in daily_exercises]), 2)
         if (sum_eaten - sum_exercised) < dailylimit:
@@ -65,7 +65,11 @@ def foods_day(date):
             text = f"You have eaten {sum_eaten}kcal and exercised {sum_exercised}kcal today. For your {dailylimit}kcal target, you are {round(abs(dailylimit-sum_eaten+sum_exercised), 2)}kcal over."
             text_good = False
         if daily_activity:
-            text += f" Total calory burn today from {daily_activity.source}: {daily_activity.calories}!"
+            if burn_offset:
+                offsetted_burn = max(daily_activity.calories - burn_offset, 0)
+                text += f" Total calory burn today from {daily_activity.source}: {offsetted_burn} (offset from {daily_activity.calories})!"
+            else:
+                text += f" Total calory burn today from {daily_activity.source}: {daily_activity.calories}!"
         recommendations = generate_autofill_recommendations(db_access.get_entries_all(username, "food_records"))
 
         #trim gpx_path
@@ -81,7 +85,8 @@ def foods_day(date):
                                remainder_text=text,
                                remainder_text_positive=text_good,
                                foodrecms=recommendations,
-                               pf_connected=pf_connected)
+                               pf_connected=pf_connected,
+                               activity_offset=burn_offset)
     
 
 @app.route("/foods/day/<date>/post", methods=["POST"])
@@ -125,39 +130,41 @@ def profile_page(user):
     if not ses_token.split("|")[0] == user:
         return "You can't access other people's profile settings. Go away >:("
     if request.method == "GET":
-        daily_target, daily_burn, weight_goal, pf_connected = db_access.fill_settings_form(user)
+        daily_target, daily_burn, weight_goal, pf_connected, activity_offset = db_access.fill_settings_form(user)
+        error = request.args.get("error")
+        show_error_msg = False
+        if error:
+            show_error_msg = True
         return render_template("profile.html",
                                username=user,
                                daily_target=daily_target,
                                daily_burn=daily_burn,
                                weight_goal=weight_goal,
-                               show_error_msg=False,
-                               error_msg="",
+                               activity_offset=activity_offset,
+                               show_error_msg=show_error_msg,
+                               error_msg=error,
                                pf_connected=pf_connected)
     elif request.method == "POST":
         error_msg = ""
         new_daily_target = request.form.get("daily_calory_target_input")
         new_daily_burn = request.form.get("daily_calory_burn_input")
         new_weight_goal = request.form.get("weight_goal_input")
+        new_activity_offset = request.form.get("activity_offset_input")
         if not new_daily_target or not is_integer(new_daily_target):
             error_msg += "Daily target needs to be integer! "
         if not new_daily_burn or not is_integer(new_daily_burn):
             error_msg += "Daily burn needs to be integer! "
         if not new_weight_goal or not is_float(new_weight_goal):
             error_msg += "Weight goal needs to be float! "
+        if not new_activity_offset or not is_integer(new_activity_offset):
+            error_msg += "Activity offset needs to be integer! "
         show_error_msg = error_msg != ""
         if not show_error_msg:
-            succ, error = db_access.update_profile_settings(user, new_daily_target, new_daily_burn, new_weight_goal)
+            succ, error = db_access.update_profile_settings(user, new_daily_target, new_daily_burn, new_weight_goal, new_activity_offset)
             if not succ:
                 show_error_msg = True
                 error_msg += error
-        return render_template("profile.html",
-                               username=user,
-                               daily_target=new_daily_target,
-                               daily_burn=new_daily_burn,
-                               weight_goal=new_weight_goal,
-                               show_error_msg=show_error_msg,
-                               error_msg=error_msg)
+        return redirect(url_for("profile_page", user=user, error=error_msg))
     
 
 @app.route("/weights/<user>", methods=["GET"])
@@ -373,11 +380,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config_path", type=str, default=".", help="Path to directory that contains config files (pfoauth.json)")
     parser.add_argument("--data_path", type=str, default=".", help="Path to directory that contains data storages (db.db and pf_data directory)")
+    parser.add_argument("--port", type=int, default=5000, help="Port to run server on")
     args = parser.parse_args()
     PF_CLIENT_ID, PF_CLIENT_SECRET = get_pf_integration_info(args.config_path)
     db_access = dbAccess(args.data_path)
     db_access.init_database()
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(host="0.0.0.0", port=args.port, debug=False)
 else:
     print("Starting in test mode i.e. using env vars instead of arguments")
     if not os.environ.get("ct_config_path") or not os.environ.get("ct_data_path"):

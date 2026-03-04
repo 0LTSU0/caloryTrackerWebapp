@@ -3,7 +3,7 @@ from scipy.stats import linregress
 import math
 from datetime import datetime
 
-def generate_food_record_plot(entries: dict, target=0, show=False, html=False):
+def generate_food_record_plot(entries: dict, target=0, activity_offset=0, show=False, html=False):
     x_keys = list(entries.keys())
     y_total_eaten_minus_burned = []
     y_total_burned = []
@@ -49,7 +49,7 @@ def generate_food_record_plot(entries: dict, target=0, show=False, html=False):
     y_activity_burns = []
     for key, val in entries.items():
         if val['activity']:
-            y_activity_burns.append(val['activity'].calories)
+            y_activity_burns.append(max(0, val['activity'].calories - activity_offset))
         else:
             y_activity_burns.append(0)
     if any(y_activity_burns): # if we dont have polarflow integration enabled, there wont be any data so dont even try generating the line

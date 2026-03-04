@@ -194,8 +194,10 @@ def get_pf_integration_info(path):
             pfouathjson = json.load(f)
             return pfouathjson["client_id"], pfouathjson["client_secret"] 
     except:
-        print("Failed to get polar flow client id from env and file -> exiting")
-        sys.exit(1)
+        print("No polar flow integration id or secret found")
+        return None, None
+        #print("Failed to get polar flow client id from env and file -> exiting")
+        #sys.exit(1)
 
 def get_pf_access_token(code, id, secret):
     # fetch polar flow access token using authentication key (https://www.polar.com/accesslink-api/?srsltid=AfmBOopLXX7JJ7BclEFUp2NQwykxiEgvIaiK0T-R-QiRO6nARfKAVZIo#token-endpoint)
