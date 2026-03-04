@@ -177,7 +177,7 @@ def weights_page(user):
     if not ses_token.split("|")[0] == user:
         return "You can't access other people's records. Go away >:("
     weight_records = db_access.get_weight_records_for_user(user)
-    dailylimit, defaultburn, weightgoal, pf_connected = db_access.fill_settings_form(user)
+    dailylimit, defaultburn, weightgoal, pf_connected, activity_offset = db_access.fill_settings_form(user)
     plot = ""
     if len(weight_records) > 0:
         plot = generate_weight_plot(weight_records, weightgoal)
